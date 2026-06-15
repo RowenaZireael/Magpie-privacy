@@ -1,5 +1,4 @@
-# Magpie-privacy
-Privacy Policy for Magpie - Molecular Analysis
+# Privacy Policy for Magpie - Molecular Analysis
 
 Last updated: 15 June 2026
 
@@ -13,7 +12,6 @@ Local files remain on the user’s device unless the user chooses to import, exp
 
 If the user configures SSH remote browsing, saved host profile information is stored on the device. SSH credentials are stored using the iOS Keychain. Remote files are accessed only from hosts configured by the user.
 
+Magpie does not collect or retain user files on developer-operated servers. Users can delete local files, saved server profiles, and stored credentials through the app or iOS system controls.
+
 Magpie does not sell user data and does not share user files with the developer.
-
-Apple may separately process TestFlight, App Store, crash, or diagnostic information according to Apple’s own terms and user settings.
-
