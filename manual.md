@@ -34,7 +34,7 @@ The local workspace is the starting point for on-device work. From the file brow
 - Scientific input files: .inp, .gjf, and .com.
 - Computational output: supported text output, commonly using .out or another recognised text extension.
 - Volumetric data: CUBE files (.cub and .cube).
-- Remote wavefunction sources: .molden, .fchk, .fch, .chk, and .gbw when the required software is available on the user's server.
+- Remote wavefunction workflow inputs: .molden, .fchk, .fch, .chk, and .gbw. These files are not opened directly by Magpie. They are processed on the user's server through Multiwfn, which must be installed and available. The .chk and .gbw formats also require their corresponding quantum-chemistry software packages to be installed and correctly configured for use by Multiwfn.
 - General preview: common images and plain-text files.
 
 The available viewer and result tools are determined by the contents of a file. A valid structure may open even when a file does not contain trajectories, frequencies, spectra, or other optional results.
@@ -192,15 +192,15 @@ Very large grids may take longer to parse and render. If a file does not open, c
 
 ## Molecular Orbitals from a Remote System
 
-Magpie can prepare orbital visualisations from supported wavefunction files stored on a configured remote system. This is an optional workflow and requires compatible scientific analysis software to be installed and working on that server.
+Magpie does not directly parse or open the listed wavefunction formats. Its optional molecular-orbital workflow operates on files stored on a configured remote system and relies on Multiwfn being installed and available on that server. For .chk and .gbw sources, the corresponding quantum-chemistry software packages must also be installed and correctly configured within Multiwfn so that Multiwfn can read or convert those files.
 
 1. Connect to the server and browse to a supported wavefunction file.
-2. Open the file and allow Magpie to prepare the molecular geometry and orbital inventory.
+2. Select the file to start the remote Multiwfn preparation workflow. Magpie does not read the wavefunction file locally.
 3. Review orbital energy, occupation, spin, and frontier-orbital information when available.
 4. Select an orbital to build and display its surface.
 5. Change orbitals from the molecular-orbital sidebar.
 
-Magpie may prefetch and temporarily cache orbital artifacts during the active session to make nearby selections faster. If preparation fails, first confirm that the remote file is readable and that the required analysis command is installed and available in the server environment.
+Magpie may prefetch and temporarily cache orbital artifacts during the active session to make nearby selections faster. If preparation fails, confirm that the remote file is readable and that Multiwfn is installed and available in the server environment. For a .chk or .gbw source, also confirm that its corresponding quantum-chemistry package is installed and that the required path or integration is correctly configured within Multiwfn.
 
 ## Optional SSH/SFTP Workspace
 
@@ -268,7 +268,7 @@ Return to the open document after changing a display preference to review the re
 - Wait for parsing and surface-building progress to finish.
 - Confirm that the CUBE file contains a valid grid and one scalar dataset.
 - For a paired CUBE workflow, select compatible files covering the same molecular region.
-- For remote orbitals, confirm that the required server-side software is installed and that the source file is supported.
+- For remote orbitals, confirm that Multiwfn is installed and available. For .chk or .gbw, also confirm that the corresponding quantum-chemistry package is installed and correctly configured within Multiwfn.
 
 ### A Remote Connection Fails
 
