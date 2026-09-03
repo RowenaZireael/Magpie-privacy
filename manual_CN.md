@@ -1,10 +1,10 @@
 # Magpie 用户手册
 
-适用版本：1.0 · iPhone 与 iPad · iOS / iPadOS 26.0 及以上
+适用版本：1.0 · iPhone、iPad 与 Mac · iOS / iPadOS 26.0 及以上
 
 [English](manual.md)
 
-Magpie 是运行于 iPhone 和 iPad 的分子可视化与几何处理程序，可读取分子坐标和计算输出，编辑结构、进行本地力场优化，并生成量子化学程序包输入文件及坐标文件。通过 SSH 连接，可以访问远程计算目录并调用 Multiwfn 分析波函数。
+Magpie 是运行于 iPhone、iPad 和 Mac 的分子可视化与几何处理程序，可读取分子坐标和计算输出，编辑结构、进行本地力场优化，并生成量子化学程序包输入文件及坐标文件。通过 SSH 连接，可以访问远程计算目录并调用 Multiwfn 分析波函数。
 
 ## 目录
 
