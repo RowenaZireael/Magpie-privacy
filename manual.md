@@ -1,10 +1,10 @@
 # Magpie User Manual
 
-Version 1.0 · iPhone and iPad · iOS / iPadOS 26.0 or later
+Version 1.0 · iPhone, iPad and Mac · iOS / iPadOS 26.0 or later
 
 [中文版](manual_CN.md)
 
-Magpie is a molecular visualisation and geometry-processing application for iPhone and iPad. It reads molecular coordinates and calculation outputs, provides a structure editor and local force-field optimisation, and generates quantum-chemistry input and coordinate files. An SSH connection provides access to remote calculation directories and Multiwfn analysis.
+Magpie is a molecular visualisation and geometry-processing application for iPhone, iPad and Mac. It reads molecular coordinates and calculation outputs, provides a structure editor and local force-field optimisation, and generates quantum-chemistry input and coordinate files. An SSH connection provides access to remote calculation directories and Multiwfn analysis.
 
 ## Contents
 
