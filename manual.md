@@ -4,7 +4,7 @@ Version 1.0 · iPhone and iPad · iOS / iPadOS 26.0 or later
 
 [中文版](manual_CN.md)
 
-Magpie is a molecular visualisation and geometry-processing application for iPhone and iPad. It reads molecular coordinates and calculation outputs, provides a structure editor and local force-field optimisation, and generates ORCA, Gaussian and coordinate files. An SSH connection provides access to remote calculation directories and Multiwfn analysis.
+Magpie is a molecular visualisation and geometry-processing application for iPhone and iPad. It reads molecular coordinates and calculation outputs, provides a structure editor and local force-field optimisation, and generates quantum-chemistry input and coordinate files. An SSH connection provides access to remote calculation directories and Multiwfn analysis.
 
 ## Contents
 
@@ -15,14 +15,13 @@ Magpie is a molecular visualisation and geometry-processing application for iPho
 5. [Building and editing molecules](#5-building-and-editing-molecules)
 6. [Force-field optimisation](#6-force-field-optimisation)
 7. [Generating input and coordinate files](#7-generating-input-and-coordinate-files)
-8. [ORCA molecular dynamics](#8-orca-molecular-dynamics)
-9. [Calculation results](#9-calculation-results)
-10. [Trajectories](#10-trajectories)
-11. [CUBE surfaces](#11-cube-surfaces)
-12. [Molecular orbitals and Quick ESP](#12-molecular-orbitals-and-quick-esp)
-13. [Terminal and interactive Multiwfn](#13-terminal-and-interactive-multiwfn)
-14. [Settings](#14-settings)
-15. [Common questions](#15-common-questions)
+8. [Calculation results](#8-calculation-results)
+9. [Trajectories](#9-trajectories)
+10. [CUBE surfaces](#10-cube-surfaces)
+11. [Molecular orbitals and Quick ESP](#11-molecular-orbitals-and-quick-esp)
+12. [Terminal and interactive Multiwfn](#12-terminal-and-interactive-multiwfn)
+13. [Settings](#13-settings)
+14. [Common questions](#14-common-questions)
 
 ## 1. General use and first steps
 
@@ -54,7 +53,7 @@ Choose XYZ for coordinates, or MOL2 to retain the structure's bond information.
 
 ### 1.4. Review a calculation
 
-Import a Gaussian or ORCA output file and open it. Use **Results** to switch between the structure trajectory, calculation details, convergence plots, vibrations and analysis. For ORCA IRC and scan calculations, keep the accompanying coordinate and trajectory files beside the main output.
+Import a supported calculation output file and open it. Use **Results** to switch between the structure trajectory, calculation details, convergence plots, vibrations and analysis. For ORCA IRC and scan calculations, keep the accompanying coordinate and trajectory files beside the main output.
 
 ### 1.5. Example: a first coordinate file
 
@@ -77,8 +76,8 @@ Save it as `water.xyz` and open it from the file list. The first line is the ato
 | Type | Formats | Use |
 | --- | --- | --- |
 | Molecular coordinates | `.xyz`, `.mol2`, `.cif`, `.pdb` | View, measure, edit and generate new files |
-| Calculation input | `.inp`, `.gjf`, `.com` | Open the geometry; use Open as Text to edit the input itself |
-| Calculation output | Gaussian and ORCA text output, commonly `.log` and `.out` | Structures, energies, optimisation, vibrations, IRC, scans and electronic excitations |
+| Calculation input | Supported quantum-chemistry input formats, including `.inp`, `.gjf` and `.com` | Open the geometry; use Open as Text to edit the input itself |
+| Calculation output | Text output from supported quantum-chemistry packages, commonly `.out` and `.log` | Structures, energies, optimisation, vibrations, IRC, scans and electronic excitations |
 | Volumetric data | `.cub`, `.cube` | Molecular orbitals, WFN Analysis, Interaction and ESP surfaces |
 | Trajectory | Multi-frame `.xyz`; `.dcd` with a reference XYZ | Play a sequence of structures |
 | Remote wavefunction | `.molden`, `.mwfn`, `.gms`, `.wfn`, `.wfx`, `.fchk`, `.fch`, `.chk`, `.gbw` | Open through the server's Multiwfn installation |
@@ -134,11 +133,11 @@ The back-to-server-list button disconnects the current server. Local files remai
 
 ### 3.2. Prepare Multiwfn
 
-Install Multiwfn on the server and make it available in its shell environment. The two binary wavefunction formats need an additional converter in that environment:
+Install Multiwfn on the server and make it available in its shell environment. For the two binary wavefunction formats, specify the paths to the corresponding conversion programs in the Multiwfn settings:
 
-| Wavefunction | Converter |
+| Wavefunction | Converter path to configure |
 | --- | --- |
-| Gaussian `.chk` | `formchk` |
+| `.chk` | `formchk` |
 | ORCA `.gbw` | `orca_2mkl` |
 
 The other wavefunction formats listed above are passed directly to Multiwfn. Put the source files in a writable calculation directory: Magpie creates temporary analysis files beside them.
@@ -168,11 +167,14 @@ Replace the directory with the installation path on the server. A cluster alloca
 | Rotate the view | One-finger drag |
 | Zoom | Pinch |
 | Pan | Two-finger drag; pointer scrolling also pans |
+| Set the rotation centre | Tap an atom outside editing and measurement modes |
 | Fit the structure again | **Reset view**, the circular-arrow button |
 | Rotate continuously | Auto-rotation button |
 | Measure | Ruler button |
 | Edit geometry | Pencil button |
 | Red–blue stereo view | Glasses button |
+
+Outside editing and measurement modes, tap an atom to make it the centre of subsequent view rotation. The atom is highlighted. Tap another atom to change the centre, or use **Reset view** to return to the overall structure centre and reset the view.
 
 The glasses button enables a red–blue anaglyph for matching 3D glasses. Adjust the red and blue intensity sliders to balance the two images.
 
@@ -272,21 +274,46 @@ Both force fields use the current structure and bond assignments. Separate molec
 
 Enable **Settings → Geometry Editor → Freeze Selected Atoms**. Select the atoms that should remain fixed, then start the optimisation. The selection is captured when you press play; the remaining atoms are free to move. Turn the setting off to return to full-structure optimisation.
 
-**Charge** and **Mult** in Generate describe the quantum-chemistry input. Force-field atom charges are assigned from the current chemical topology, separately from those input fields.
+### 6.3. Default formal charges
+
+Magpie assigns formal charges for force-field atom typing from the displayed elements, bonds, explicit hydrogens and recognised aromatic or resonance groups. An atom with no bonds uses the following ion-family defaults:
+
+| Isolated atom | Default formal charge |
+| --- | --- |
+| Alkali metal, such as Li, Na or K | +1 |
+| Alkaline-earth metal, such as Be, Mg or Ca | +2 |
+| Chalcogen, such as O, S or Se | −2 |
+| Halogen, such as F, Cl, Br or I | −1 |
+
+Thus, an unconnected Na atom is treated as Na⁺ and an unconnected Cl atom as Cl⁻. These family defaults apply to unbonded atoms; bonded main-group atoms are assigned charges from their local bonding environment. For example, nitrogen with four single bonds is assigned +1, while oxygen with only one single bond is assigned −1. Hydrogens contribute to this valence count when they are present in the displayed structure.
+
+Transition-metal centres use preset oxidation states for force-field typing, including in coordination structures. The defaults for the first three d-block series are:
+
+| Elements | Default oxidation state |
+| --- | --- |
+| Cu, Ag | +1 |
+| Mn, Fe, Ni, Zn, Ru, Pd, Cd, Pt, Hg | +2 |
+| Sc, Y, Cr, Co, Rh, Ir, Au | +3 |
+| Ti, Zr, Hf | +4 |
+| V, Nb, Ta, Tc | +5 |
+| Mo, W, Os | +6 |
+| Re | +7 |
+
+The assigned formal charges describe the topology supplied to the force field. **Charge** and **Mult** in Generate set the total charge and multiplicity of the quantum-chemistry input; they do not change these force-field assignments. Each optimisation uses the current structure, so adding hydrogens or changing bond orders updates the charge assignment on the next run.
 
 ## 7. Generating input and coordinate files
 
-**Generate** creates a file from the current editor geometry. It opens with ORCA selected; use **Format** to choose ORCA, Gaussian, XYZ, MOL2, CIF or PDB.
+**Generate** creates a file from the current editor geometry. It opens with ORCA selected; use **Format** to choose a supported quantum-chemistry input format or an XYZ, MOL2, CIF or PDB coordinate file.
 
-### 7.1. ORCA and Gaussian
+### 7.1. Supported quantum-chemistry input formats
 
-1. Choose the program and **Job**.
+1. Choose the program package and **Job**.
 2. Set **Functional** and **Basis**. The method menu also includes non-DFT choices; the available controls follow the selected method.
 3. Enter **Charge**, **Mult**, **Mem GB** and **Cores**.
 4. Set the job-specific options, dispersion and solvation as needed.
 5. Review the generated text, enter the file name and tap **Save**.
 
-Mem GB is the total memory setting. For ORCA, Magpie divides it by the core count when writing `%maxcore`. **Additional keywords** adds keywords to the generated input. Gaussian also provides the **Chk** option; ORCA provides an auxiliary-basis choice for applicable methods.
+Mem GB is the total memory setting. For ORCA, Magpie divides it by the core count when writing `%maxcore`. **Additional keywords** adds keywords to the generated input. ORCA provides an auxiliary-basis choice for applicable methods.
 
 | Job | Purpose |
 | --- | --- |
@@ -300,16 +327,18 @@ Mem GB is the total memory setting. For ORCA, Magpie divides it by the core coun
 | TDDFT | Electronic excited states |
 | AIMD | ORCA molecular dynamics |
 
-For IRC, choose Both, Forward or Backward and set the program-specific path controls. For TDDFT, set **Excited states** to the number of roots to request.
+For IRC, choose Both, Forward or Backward and set the path controls. For TDDFT, set **Excited states** to the number of roots to request.
 
 Saving from Local writes into the current Local folder. Saving while connected to SSH writes into the current remote directory. Generate prepares the file; run the calculation with the server's normal program or scheduler commands in Terminal.
 
 ### 7.2. Relaxed scans
 
+The following procedure uses ORCA as an example.
+
 1. Select **Job → Scan** and choose **Dimensions → 1D** or **2D**.
 2. Set the coordinate type to Bond, Angle or Dihedral.
 3. Enter the atom numbers in the displayed order. Magpie's atom numbering starts at 1.
-4. For Gaussian, set the step and point count. For ORCA, set the start, end and point count.
+4. Set the start, end and point count.
 5. For a 2D scan, define Coordinate 2 independently.
 
 An ordered selection of two to four atoms in the editor can prefill Coordinate 1 for a 1D scan. Select Scan as the job explicitly. Bond coordinates use Å; angle and dihedral coordinates use degrees.
@@ -335,7 +364,7 @@ This defines nine positions, including both endpoints, separated by 0.05 Å. The
 end
 ```
 
-For a Gaussian scan, the displayed final value is the initial value plus `(Points − 1) × Step`. In a 2D scan, the two coordinates define a grid; for example, 9 points on Coordinate 1 and 7 on Coordinate 2 specify 63 coordinate combinations.
+In a 2D scan, the two coordinates define a grid; for example, 9 points on Coordinate 1 and 7 on Coordinate 2 specify 63 coordinate combinations.
 
 ### 7.3. Edit the generated text
 
@@ -351,7 +380,7 @@ These exports use the current structure, not the complete trajectory or calculat
 
 For the structure and block syntax of ORCA inputs, see the [ORCA 6 input reference](https://www.faccts.de/docs/orca/6.0/manual/contents/structure.html).
 
-## 8. ORCA molecular dynamics
+### 7.5. ORCA molecular dynamics
 
 In Generate, choose **ORCA → Job → AIMD**. Set the electronic-structure method and the dynamics controls.
 
@@ -368,13 +397,13 @@ In Generate, choose **ORCA → Job → AIMD**. Set the electronic-structure meth
 
 **Keep center of mass** controls the centre of mass during the simulation.
 
-### 8.1. Cell walls
+#### 7.5.1. Cell walls
 
 Under **Cell wall**, choose None, Cube, Rectangular, Sphere or Ellipsoid. Enter the dimensions in Å and the wall spring constant in kJ/mol/Å². These are non-periodic harmonic walls.
 
 With a wall selected, **Center geometry at origin** moves the geometry's arithmetic centre to the origin in the generated input. It leaves the editor coordinates unchanged. This is a preparation step, separate from Keep center of mass during the run.
 
-### 8.2. Output files
+#### 7.5.2. Output files
 
 For an input named `sample.inp`:
 
@@ -383,7 +412,7 @@ For an input named `sample.inp`:
 
 After running the calculation, refresh the remote folder. Open the XYZ trajectory directly, or open `sample.xyz` and attach `sample_traj.dcd` as described below.
 
-### 8.3. Example: write a DCD trajectory
+#### 7.5.3. Example: write a DCD trajectory
 
 With a structure open in Geometry Editor, choose ORCA and AIMD, then use these settings:
 
@@ -416,27 +445,27 @@ end
 
 After the calculation, open `sample.xyz` and load `sample_traj.dcd` from Results. Detailed MD command definitions are in the [ORCA 6 molecular-dynamics reference](https://www.faccts.de/docs/orca/6.0/manual/contents/detailed/moldyn.html).
 
-## 9. Calculation results
+## 8. Calculation results
 
-Open a Gaussian or ORCA output and show **Results**. The panel menu follows the data recorded in the calculation.
+Open a supported calculation output and show **Results**. The panel menu follows the data recorded in the calculation.
 
-### 9.1. Details and optimisation
+### 8.1. Details and optimisation
 
 **Details** contains **Info**, **Thermo** and **Convergence** tables. Use them for the program and job information, charge and multiplicity, energies, thermochemical quantities and convergence criteria.
 
 For an optimisation, use the trajectory controls to inspect individual steps. The convergence plots show how the reported criteria change through the optimisation and highlight the current step.
 
-### 9.2. Vibrations
+### 8.2. Vibrations
 
 Choose **Vibrations**, select a mode from the frequency menu, then tap **Play Vibration**. The arrows move between neighbouring modes. **Displacement Amplitude** changes the size of the displayed motion. Frequencies are shown in cm⁻¹; negative frequencies identify imaginary modes in the output.
 
-### 9.3. IRC and one-dimensional scans
+### 8.3. IRC and one-dimensional scans
 
 Choose **IRC** or **Scan** in Results to view the energy profile and its linked trajectory. Tap a point on the curve to display that geometry. Relative energies are shown in kcal/mol.
 
-Keep ORCA's companion files in the same folder as the main output. Magpie reads the available IRC paths, combined scan coordinates and numbered or trajectory XYZ files when assembling the results. Gaussian IRC and relaxed-scan views use the accepted points recorded in the output.
+Keep ORCA's companion files in the same folder as the main output. Magpie reads the available IRC paths, combined scan coordinates and numbered or trajectory XYZ files when assembling the results.
 
-### 9.4. Two-dimensional scans
+### 8.4. Two-dimensional scans
 
 Tap **2D Scan** in the Results header to open the potential-energy surface.
 
@@ -447,19 +476,19 @@ Tap **2D Scan** in the Results header to open the potential-energy surface.
 
 The axes use the scan coordinates and relative energy in kcal/mol. Incomplete grids use the contour view, with gaps retained where calculation points are missing.
 
-### 9.5. UV–Vis and orbital transitions
+### 8.5. UV–Vis and orbital transitions
 
-For a TDDFT or other supported excited-state output, **UV-Vis Spectrum** displays the absorption spectrum against wavelength in nm. The displayed Gaussian FWHM identifies the broadening used for the spectrum.
+For a TDDFT or other supported excited-state output, **UV-Vis Spectrum** displays the absorption spectrum against wavelength in nm. The displayed FWHM (full width at half maximum) gives the peak width used for spectral broadening.
 
 **Orbital Transitions** lists the excited states, orbital pairs, spin labels and contribution percentages reported or derived from the output. This is separate from the Molecular Orbitals sidebar, which generates spatial orbitals from a wavefunction file.
 
-## 10. Trajectories
+## 9. Trajectories
 
-### 10.1. Multi-frame XYZ
+### 9.1. Multi-frame XYZ
 
 Open the XYZ file and select **Trajectory**. Tap Play, drag the Frame slider to inspect a particular structure, and adjust **Speed** in frames per second. Enable **Settings → Molecule Viewer → Loop Trajectory Playback** to repeat the sequence.
 
-### 10.2. DCD with a reference XYZ
+### 9.2. DCD with a reference XYZ
 
 1. Put the DCD and its reference XYZ in the same Local or Remote folder.
 2. Open the single-frame XYZ.
@@ -471,7 +500,7 @@ The XYZ supplies the element identities and atom order; the DCD supplies the cha
 
 To reuse a frame, pause at that frame, enter Geometry Editor and choose Generate.
 
-## 11. CUBE surfaces
+## 10. CUBE surfaces
 
 Open a `.cub` or `.cube` file and choose a mode in **CUBE Visualization**.
 
@@ -482,11 +511,11 @@ Open a `.cub` or `.cube` file and choose a mode in **CUBE Visualization**.
 | Interaction | The field defining the surface | The field used for colouring | A blue–green–red coloured surface |
 | ESP | Electron density | Electrostatic potential | Potential mapped onto a density surface |
 
-### 11.1. A single-field surface
+### 10.1. A single-field surface
 
 Open the CUBE, choose Molecular Orbital or WFN Analysis, then adjust the Surface controls in Results. WFN Analysis displays the data already contained in the CUBE; generate that field in your analysis program first.
 
-### 11.2. A coloured surface
+### 10.2. A coloured surface
 
 1. Open the CUBE that defines the surface geometry.
 2. Choose Interaction or ESP.
@@ -495,7 +524,7 @@ Open the CUBE, choose Molecular Orbital or WFN Analysis, then adjust the Surface
 
 For ESP, open the density CUBE first and the potential CUBE second. For Interaction, use the surface and colouring fields produced by the same analysis. Keep both fields in the same molecular coordinate system.
 
-### 11.3. Surface controls
+### 10.3. Surface controls
 
 - **Iso Value** selects the value at which the surface is drawn.
 - **Render Quality** changes the surface sampling quality.
@@ -504,7 +533,7 @@ For ESP, open the density CUBE first and the potential CUBE second. For Interact
 
 Lower the render quality while adjusting a large surface, then raise it for closer inspection.
 
-### 11.4. ESP colour scale
+### 10.4. ESP colour scale
 
 The scale runs from blue at the minimum through white at the midpoint to red at the maximum. Values are in atomic units. Tap an endpoint to edit it; on iPad the fields are edited inline, while iPhone uses a separate prompt.
 
@@ -512,15 +541,15 @@ The scale runs from blue at the minimum through white at the midpoint to red at 
 
 For example, a minimum of −0.030 and a maximum of +0.030 a.u. place zero at white. With −0.020 and +0.040 a.u., white represents +0.010 a.u. Values below or above the chosen limits use the endpoint colours.
 
-### 11.5. Save CUBE data to Local
+### 10.5. Save CUBE data to Local
 
 For remote CUBE files, choose **Save** for a single field or **Save Both** for a paired surface. Select an existing Local folder or create a new one. Both files are needed to reopen an Interaction or ESP pair.
 
-## 12. Molecular orbitals and Quick ESP
+## 11. Molecular orbitals and Quick ESP
 
 These tools work from a remote wavefunction file using the server's prepared Multiwfn environment.
 
-### 12.1. Molecular orbitals
+### 11.1. Molecular orbitals
 
 1. Connect to the server and open a wavefunction file.
 2. Tap the **Molecular Orbitals** button in the workspace header.
@@ -530,7 +559,7 @@ These tools work from a remote wavefunction file using the server's prepared Mul
 
 Orbitals near the frontier region are prepared ahead of time. Double-tap a more distant orbital to also prepare the uncached orbitals between it and the nearby cached region of the same spin. Use **Settings → Analysis → Orbital Energy Unit** to switch between a.u. and eV.
 
-### 12.2. Quick ESP
+### 11.2. Quick ESP
 
 1. Open a remote wavefunction file.
 2. Tap the **Quick ESP** button beside Molecular Orbitals.
@@ -540,13 +569,13 @@ Orbitals near the frontier region are prepared ahead of time. Double-tap a more 
 
 The orbital and Quick ESP calculations use temporary analysis files. Saving the CUBE results to Local lets you reopen those surfaces without a server connection.
 
-## 13. Terminal and interactive Multiwfn
+## 12. Terminal and interactive Multiwfn
 
-### 13.1. Terminal
+### 12.1. Terminal
 
 While connected to SSH, open **Terminal** from the workspace header. It starts in the current remote directory. Use it to run commands, submit calculations and inspect the server's output. Close the panel with its × button when finished, then refresh the file browser to see new files.
 
-### 13.2. Interactive Multiwfn
+### 12.2. Interactive Multiwfn
 
 Select a remote analysis file and open **Multiwfn** from the header. The panel contains the program's terminal output and shortcut buttons for recognised menu options.
 
@@ -554,7 +583,7 @@ Tap a numbered option or enter the response directly in the terminal. Continue t
 
 Molecular Orbitals, Quick ESP and interactive Multiwfn share the Multiwfn environment. Finish or close the current analysis before starting another of these tools. The ordinary Terminal is a separate session.
 
-## 14. Settings
+## 13. Settings
 
 | Section | Setting | Use |
 | --- | --- | --- |
@@ -570,40 +599,40 @@ Molecular Orbitals, Quick ESP and interactive Multiwfn share the Multiwfn enviro
 
 About shows the app version. Credits and Open Source Software list the scientific software, libraries and their notices.
 
-## 15. Common questions
+## 14. Common questions
 
-### 15.1. Where did my generated file go?
+### 14.1. Where did my generated file go?
 
 Generate saves into the current browser directory. Look in Local if you were working locally, or refresh the remote directory if you were connected to a server. CUBE Save / Save Both uses the Local folder chosen in its destination picker.
 
-### 15.2. How do I keep an edited structure?
+### 14.2. How do I keep an edited structure?
 
 Use Generate before stopping the editor. Choose MOL2 to keep the bond assignments, or XYZ for coordinates. Use Open as Text when the task is to change the original input file rather than create a new geometry file.
 
-### 15.3. Why is there no DCD button?
+### 14.3. Why is there no DCD button?
 
 Open the single-frame reference XYZ first and show Results. The DCD attachment button appears for that structure. Put the DCD in the same folder.
 
-### 15.4. Why are vibrations, spectra or scan points missing?
+### 14.4. Why are vibrations, spectra or scan points missing?
 
 Open the main calculation output containing those results. A coordinate file contains geometry rather than frequency or excitation data. For ORCA IRC and scans, include the companion files in the same directory and refresh the folder before reopening the output.
 
-### 15.5. Why will a wavefunction not open?
+### 14.5. Why will a wavefunction not open?
 
-Open it from Remote, with Multiwfn available in the prepared environment. For `.chk`, check `formchk`; for `.gbw`, check `orca_2mkl`. Also check that the source directory is writable. If a cluster allocation has ended, reconnect to prepare a fresh environment.
+Open it from Remote, with Multiwfn available in the prepared environment. In the Multiwfn settings, check the configured path to `formchk` for `.chk`, or `orca_2mkl` for `.gbw`. Also check that the source directory is writable. If a cluster allocation has ended, reconnect to prepare a fresh environment.
 
-### 15.6. What should I change when force-field optimisation reports an error?
+### 14.6. What should I change when force-field optimisation reports an error?
 
 Inspect the displayed elements, bonds and hydrogens. Correct an unintended bond or bond order in Geometry Editor, then try again. Use UFF for transition-metal coordination. MMFF94s can optimise recognised aromatic and resonance structures, but an isolated generic Partial Double bond needs a defined chemical bond assignment.
 
-### 15.7. Why does a surface look empty or unusually coloured?
+### 14.7. Why does a surface look empty or unusually coloured?
 
 For an empty surface, lower Iso Value. For a paired surface, check the order of the two CUBE files. For ESP, tap Auto to fit the displayed surface, or restore the numerical range used for the comparison.
 
-### 15.8. A file is too large to import
+### 14.8. A file is too large to import
 
 The import limit is 512 MiB per file. CUBE files support up to 20 million grid points and one scalar dataset per file. Regenerate a coarser CUBE or export a shorter trajectory for on-device inspection.
 
-### 15.9. Report an issue
+### 14.9. Report an issue
 
 Use the repository's [Issues page](https://github.com/RowenaZireael/Magpie-privacy/issues). Include the Magpie version, device and system version, file type, the steps that reproduce the problem, and the error text. A small example file or screenshot helps reproduce it.
