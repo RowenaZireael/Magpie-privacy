@@ -1,12 +1,16 @@
 # Magpie User Manual
 
-Version 1.0 · iPhone, iPad and Mac · iOS / iPadOS 26.0 or later
+Version 1.05 · iPhone, iPad and Mac · iOS / iPadOS 26.0 or later
+
+Last updated: 22 September 2026
 
 [中文版](manual_CN.md)
 
 Magpie is a molecular visualisation and geometry-processing application for iPhone, iPad and Mac. It reads molecular coordinates and calculation outputs, provides a structure editor and local force-field optimisation, and generates quantum-chemistry input and coordinate files. An SSH connection provides access to remote calculation directories and Multiwfn analysis.
 
 ## Contents
+
+Frequently used additions: [file and folder drag and drop](#25-drag-files-and-folders-between-apps), [background SSH](#34-switching-apps-locking-the-screen-and-reconnecting), [Apple Pencil](#58-apple-pencil), [GOAT input](#76-orca-goat-conformational-sampling) and [conformer results](#86-goat-conformer-ensembles).
 
 1. [General use and first steps](#1-general-use-and-first-steps)
 2. [Files and folders](#2-files-and-folders)
@@ -84,6 +88,8 @@ Save it as `water.xyz` and open it from the file list. The first line is the ato
 | Text | `.txt`, `.text`, `.md`, `.csv`, `.tsv` | Read and edit text |
 | Images | PNG, JPEG, HEIC / HEIF, GIF, BMP and TIFF | Preview, zoom and pan |
 
+XYZ files, including multi-frame trajectories, accept element symbols, atomic numbers 1–118, or mixed notation in the element column. Supported Cartesian input blocks also accept atomic numbers; generated coordinates continue to use element symbols. MOL2 reading distinguishes common lowercase GAFF atom types from similarly named elements using the atom name and type.
+
 ### 2.2. Navigate and organise
 
 Tap a folder to enter it. The **../** row at the top returns to the parent folder. The path field lets you jump to a directory; the filter narrows the current file list. Use **Refresh** after a remote calculation creates new output.
@@ -99,6 +105,8 @@ Long-press a file, or right-click with a pointer, to open its menu:
 
 Use **New Folder** to create a directory. Drag a file onto a folder to move it there, or onto **../** to move it up one level. **Settings → File Browser → Show Hidden Files** includes names beginning with a period.
 
+Folder menus also provide **Rename**, **Export Folder**, and, for remote folders, **Download to Local**. Folder downloads and exports retain subfolders, empty folders, hidden files and binary contents. Download to Local keeps existing items by assigning a unique name to the new copy.
+
 ### 2.3. Import from Files or another app
 
 The import button copies files into the directory currently open in Magpie. In Local, the destination is on the device. In Remote, the files are uploaded to the open server directory. An existing file is kept and the imported copy receives a unique name.
@@ -108,6 +116,19 @@ You can also share a compatible file from another app and choose Magpie. It open
 ### 2.4. Edit text
 
 Choose **New Text File**, or use **Open as Text** on an existing file. Edit the contents and use the checkmark **Save** button in the document header. **Save As** creates a separate file in the current directory. Saved text uses Unix line endings, suitable for calculation inputs and shell scripts.
+
+### 2.5. Drag files and folders between apps
+
+1. Open Local or connect to an SSH server, then navigate to the destination directory.
+2. Drag files or folders from Files or another app into the Magpie workspace. You can drop into the workspace even when the sidebar is hidden.
+3. Magpie copies them into the directory open when you drop. In SSH, this uploads the contents to the server. Existing items are kept under their original names; incoming copies receive unique names.
+4. To copy items out, drag a file or folder from Magpie to an app that accepts it. Remote items are downloaded for delivery; the source remains in place.
+
+Whole-folder transfers preserve the directory structure. Uploads and downloads show progress. Cancelling an outward drag does not start an export download. Dragging a file onto a folder within Magpie moves that file; dropping it on a non-target workspace area cancels the drag.
+
+After an incoming drop, Magpie opens the last supported top-level file; folders are imported without opening. DCD files remain available for attachment to a reference XYZ. Wavefunction files are imported without opening in Local or when remote Multiwfn is unavailable; an available server Multiwfn environment enables the usual opening workflow.
+
+The transfer limit is 512 MiB per item, counting the complete contents of a folder. Symbolic links are not followed. For GOAT and other results with companion files, transferring their containing folder helps preserve matching names.
 
 ## 3. Connecting to a server
 
@@ -158,6 +179,16 @@ export PATH=/opt/Multiwfn:$PATH
 
 Replace the directory with the installation path on the server. A cluster allocation command belongs in the same field when Multiwfn is to run on an allocated compute node; its queue, time and resource options are those of the cluster.
 
+### 3.4. Switching apps, locking the screen and reconnecting
+
+With an SSH connection open, switching apps or locking the device requests temporary background execution to keep the shared connection and its readers active. The system decides how much background time is available; this is not an indefinite connection guarantee.
+
+When Live Activities are enabled and available, a Lock Screen card displays the magpie and **SSH connected**. The activity is removed when you return to Magpie, disconnect, change servers or the background time expires. The card does not extend the system's background time.
+
+On return, Magpie checks the original connection through SFTP. A healthy connection keeps the existing shell. If it has failed, Magpie updates the connection status, retains ordinary terminal history and provides manual-reconnect guidance. The check waits while a file transfer is active.
+
+For long calculations, use the server's normal job scheduler or session-management tools. The Live Activity is a connection indicator, not a guarantee that a remote job will survive a lost SSH session.
+
 ## 4. Viewing and measuring structures
 
 ### 4.1. Scene controls
@@ -194,6 +225,12 @@ Tap a selected atom to remove it from the measurement. Double-tap empty space to
 
 MOL2 files retain their explicit bond information. For coordinate-only structures, Magpie determines connections and bond orders from the geometry and local chemical environment. Aromatic, amide and resonant bonds share a partial-double visual style while retaining their separate chemical meanings.
 
+### 4.4. Element appearance and workspace behaviour
+
+All 118 elements have assigned colours and display radii. The colours aid identification; they are not a measurement of emitted light. Display sizes broadly follow reference covalent radii, with a compact hydrogen display. These visual sizes do not change coordinates, inferred bonds or force-field parameters.
+
+The interface retains its dark appearance regardless of the system theme. On iPad, use the sidebar divider to resize the file browser, including while GOAT charts are open. Auto-rotation, trajectory playback and vibrations continue while scrolling the file list or result panels; presentations and leaving the app can still pause the scene.
+
 ## 5. Building and editing molecules
 
 Tap the pencil to enter **Geometry Editor**, or start with **New 3D Model**. Editing starts from the displayed frame, so a trajectory frame can be used as the starting geometry for a new calculation.
@@ -213,14 +250,14 @@ These operations change the selected coordinates. Ordinary scene rotation change
 
 1. Choose **Add atom**.
 2. Tap the element symbol to open the periodic table and choose an element.
-3. Choose **Bond Order**: Single, Double, Triple or Partial Double.
+3. Choose **Bond Order**: Single, Partial Double, Double or Triple.
 4. Tap empty space to add an unconnected atom, or drag out from an existing atom to add a bonded atom.
 
 While Add atom is active, tapping an existing atom replaces its element. Dragging from one existing atom to another creates a bond. If they are already bonded, repeating the drag cycles Single → Double → Triple → Single; a Partial Double becomes Double.
 
 ### 5.3. Add a group or ring
 
-Choose **Add group**, then select a fragment from **Group / Structure**. Tap empty space to place it as a separate fragment, or drag from an existing atom to attach it. Tapping a terminal atom replaces that atom with the selected fragment, which is useful for substituting a hydrogen with a functional group.
+Choose **Add group**, then select from **Functional Groups** or **Structures** in **Group / Structure**. Functional groups can be placed in empty space, attached by dragging from an existing atom, or substituted for a terminal atom such as hydrogen. Structures are placed as complete standalone templates in empty space; they do not use drag attachment or terminal-atom replacement.
 
 For example, to build phenol, place **Benzene** on a new canvas, change the fragment choice to **Hydroxyl**, and tap one of the ring's terminal hydrogen atoms. The hydroxyl group replaces that hydrogen and attaches to the ring. Optimise the resulting structure, then save it with Generate.
 
@@ -240,6 +277,8 @@ Tap the atoms in order rather than box-selecting them. The matching geometry but
 
 Choose the control and adjust its slider. Distances are shown in Å and angles in degrees. Use **Reset view** after extending a structure beyond the visible area.
 
+Tap the active geometry control again to return to Select while keeping the selected atoms and their order. R and T are unavailable without a selection or while editing is locked.
+
 ### 5.6. Keyboard shortcuts
 
 | Key | Action |
@@ -255,6 +294,16 @@ Choose the control and adjust its slider. Distances are shown in Å and angles i
 
 Open **Generate** from Geometry Editor and save the geometry as an input or coordinate file. Save before leaving the editor: **Stop editing** returns to the original document, rather than writing the edited coordinates back into the source file.
 
+### 5.8. Apple Pencil
+
+On compatible iPad and Apple Pencil hardware, activate Add atom or a group/structure tool:
+
+- **Hover** previews placement before contact. Elements preview the replacement position; functional groups preview the attachment atom; structures preview the complete template. The preview does not modify the molecule.
+- **Double-tap the Pencil body** in active Add atom mode to cycle Single → Partial Double → Double → Triple → Single.
+- **Squeeze** opens the periodic table in element mode, or the Group / Structure menu in fragment mode. Squeeze again to dismiss it.
+
+Hover, double-tap and squeeze each require hardware that supports that feature. Pencil editing actions are unavailable while optimisation locks editing. Touch and pointer editing remain available without Pencil. Adding atoms and fragments is more responsive for all input methods, including when extending large structures.
+
 ## 6. Force-field optimisation
 
 ### 6.1. Optimise a structure
@@ -268,7 +317,7 @@ Open **Generate** from Geometry Editor and save the geometry as an input or coor
 
 One optimisation is one undo step. To adjust atoms or bonds, pause the optimisation first. Stopping the editor while an optimisation is still running cancels that run.
 
-Both force fields use the current structure and bond assignments. Separate molecules on the same canvas are optimised together, including their intermolecular interactions. For transition-metal coordination structures, choose UFF.
+Both force fields use the current structure and bond assignments. Separate molecules on the same canvas are optimised together, including their intermolecular interactions. For transition-metal coordination structures, choose UFF. MMFF94s supports recognised fused aromatic systems, including larger valid structures, but requires a chemically valid topology. UFF reports an error for elements without supported parameters rather than substituting parameters.
 
 ### 6.2. Optimise part of a structure
 
@@ -313,7 +362,9 @@ The assigned formal charges describe the topology supplied to the force field. *
 4. Set the job-specific options, dispersion and solvation as needed.
 5. Review the generated text, enter the file name and tap **Save**.
 
-Mem GB is the total memory setting. For ORCA, Magpie divides it by the core count when writing `%maxcore`. **Additional keywords** adds keywords to the generated input. ORCA provides an auxiliary-basis choice for applicable methods.
+Mem GB is the total memory setting. For ORCA, Magpie divides it by the core count when writing `%maxcore`. **Additional keywords** adds keywords to the generated input. ORCA provides independent **AuxJ** and **AuxC** menus for applicable methods. Both selections can be used together; **AutoAux** is a global option and is written only once. The generated preview shows the resulting keywords.
+
+The implicit-solvent lists include more common solvents and retain the selected solvent when switching between supported programs. Choose the solvation model and solvent, then check the preview; **None** disables the solvent selection.
 
 | Job | Purpose |
 | --- | --- |
@@ -326,6 +377,7 @@ Mem GB is the total memory setting. For ORCA, Magpie divides it by the core coun
 | Scan | One- or two-dimensional relaxed scan |
 | TDDFT | Electronic excited states |
 | AIMD | ORCA molecular dynamics |
+| GOAT | ORCA conformational sampling |
 
 For IRC, choose Both, Forward or Backward and set the path controls. For TDDFT, set **Excited states** to the number of roots to request.
 
@@ -368,7 +420,7 @@ In a 2D scan, the two coordinates define a grid; for example, 9 points on Coordi
 
 ### 7.3. Edit the generated text
 
-The text below the controls is editable. After you make a manual edit, it is kept instead of being regenerated by later setting changes. Tap **Reset** to rebuild the text from the current controls, or change Format to start a new template.
+The text below the controls is editable. After you make a manual edit, it is kept instead of being regenerated by later setting changes. Tap **Reset** to discard manual text changes and rebuild from the current controls. Reset keeps all selected options and the filename. Changing Format starts a new template.
 
 ### 7.4. Coordinate export
 
@@ -445,6 +497,18 @@ end
 
 After the calculation, open `sample.xyz` and load `sample_traj.dcd` from Results. Detailed MD command definitions are in the [ORCA 6 molecular-dynamics reference](https://www.faccts.de/docs/orca/6.0/manual/contents/detailed/moldyn.html).
 
+### 7.6. ORCA GOAT conformational sampling
+
+1. Open a structure in Geometry Editor and choose **Generate → ORCA → Job → GOAT**.
+2. Select **Mode**: standard GOAT, ENTROPY, EXPLORE, REACT, DIVERSITY or COARSE.
+3. Set **Workers**, **Max. global iterations**, **Temperature** and **Energy window** as needed.
+4. Review the generated input and save it. Run the sampling calculation using your ORCA installation; Magpie prepares inputs and analyses results rather than running ORCA on the device.
+5. Keep the final output and matching `.finalensemble.xyz` together for result viewing.
+
+Workers, Temperature and Energy window can be left blank as **Default**; their keywords are omitted so ORCA uses its defaults. The input temperature is separate from the temperature slider used to explore result populations. COARSE requires fragment definitions to be completed in the editable preview.
+
+Supported settings can be recovered from GOAT inputs and output echoes. Imported non-default advanced settings are retained in the preview even when they have no dedicated form control. Switching to Gaussian changes the GOAT job back to OPT.
+
 ## 8. Calculation results
 
 Open a supported calculation output and show **Results**. The panel menu follows the data recorded in the calculation.
@@ -476,11 +540,27 @@ Tap **2D Scan** in the Results header to open the potential-energy surface.
 
 The axes use the scan coordinates and relative energy in kcal/mol. Incomplete grids use the contour view, with gaps retained where calculation points are missing.
 
+Ordinary sample markers are smaller and less opaque on dense grids so they obscure less of the surface or contours. The selected point remains prominent; all sample points remain available.
+
 ### 8.5. UV–Vis and orbital transitions
 
 For a TDDFT or other supported excited-state output, **UV-Vis Spectrum** displays the absorption spectrum against wavelength in nm. The displayed FWHM (full width at half maximum) gives the peak width used for spectral broadening.
 
 **Orbital Transitions** lists the excited states, orbital pairs, spin labels and contribution percentages reported or derived from the output. This is separate from the Molecular Orbitals sidebar, which generates spatial orbitals from a wavefunction file.
+
+### 8.6. GOAT conformer ensembles
+
+Place the GOAT `.out` and its matching `.finalensemble.xyz` in the same Local or Remote directory, then open the `.out`. For example, keep `sample.out` with `sample.finalensemble.xyz`. The output supplies the final conformer table; the ensemble supplies the geometries. Initial optimisation trajectories and intermediate search ensembles are not substitutes for the final ensemble.
+
+In **Conformation**, use the conformer menu, arrows or slider, or select a bar in either chart. The 3D structure and both chart selections change together. ORCA conformer numbering starts at **0**, independently of Magpie's atom numbering.
+
+- **Population** shows percentages and **Relative energy** uses kcal/mol.
+- On iPad, population is on the left and energy on the right; on iPhone, population appears above energy.
+- **Temperature** defaults to 298.15 K for each newly opened document and ranges from 0 to 500 K. Changing it recalculates normalised Boltzmann populations from relative energies and reported degeneracies without changing the selected conformer.
+- At 0 K, only the lowest-energy conformer or tied lowest-energy conformers receive population, weighted by degeneracy.
+- Original percentages from the output remain in Details as **ORCA population**. Recalculated values can differ slightly because the output energies are rounded. Moving the slider neither reruns GOAT nor changes the saved results.
+
+If the final table and ensemble are missing, damaged or inconsistent, Magpie displays a GOAT-specific error. Check that both files come from the same completed calculation and retain their matching names.
 
 ## 9. Trajectories
 
@@ -575,6 +655,12 @@ The orbital and Quick ESP calculations use temporary analysis files. Saving the 
 
 While connected to SSH, open **Terminal** from the workspace header. It starts in the current remote directory. Use it to run commands, submit calculations and inspect the server's output. Close the panel with its × button when finished, then refresh the file browser to see new files.
 
+Use mouse or trackpad dragging to select terminal text, then copy with the context menu or **Command–C**. **Ctrl–C** interrupts the foreground command rather than copying. **Esc** is delivered to terminal applications such as vi. Selection remains available as new output arrives.
+
+Mouse-wheel and two-finger trackpad scrolling move through ordinary shell history. In full-screen terminal applications such as vi, scrolling is sent to the application using its supported mouse or cursor-key behaviour.
+
+For background session behaviour and reconnecting after locking the device, see [Switching apps, locking the screen and reconnecting](#34-switching-apps-locking-the-screen-and-reconnecting).
+
 ### 12.2. Interactive Multiwfn
 
 Select a remote analysis file and open **Multiwfn** from the header. The panel contains the program's terminal output and shortcut buttons for recognised menu options.
@@ -597,7 +683,7 @@ Molecular Orbitals, Quick ESP and interactive Multiwfn share the Multiwfn enviro
 | File Browser | Show Hidden Files | Show dot-prefixed files and folders |
 | Analysis | Orbital Energy Unit | Choose a.u. or eV |
 
-About shows the app version. Credits and Open Source Software list the scientific software, libraries and their notices.
+About shows the app version. Credits and Open Source Software list the scientific software, libraries and their notices, including Jmol as a reference for some element colours.
 
 ## 14. Common questions
 
@@ -631,8 +717,17 @@ For an empty surface, lower Iso Value. For a paired surface, check the order of 
 
 ### 14.8. A file is too large to import
 
-The import limit is 512 MiB per file. CUBE files support up to 20 million grid points and one scalar dataset per file. Regenerate a coarser CUBE or export a shorter trajectory for on-device inspection.
+The import limit is 512 MiB per file or transferred folder tree. Symbolic links are not supported for folder transfers. CUBE files support up to 20 million grid points and one scalar dataset per file. Regenerate a coarser CUBE or export a shorter trajectory for on-device inspection.
 
 ### 14.9. Report an issue
 
 Use the repository's [Issues page](https://github.com/RowenaZireael/Magpie-privacy/issues). Include the Magpie version, device and system version, file type, the steps that reproduce the problem, and the error text. A small example file or screenshot helps reproduce it.
+
+### 14.10. Why did SSH disconnect while the device was locked?
+
+Background execution is temporary and system-controlled. Return to Magpie and let it check the connection; reconnect manually if it reports a failure. Retained terminal history does not mean the old shell is still running. See [section 3.4](#34-switching-apps-locking-the-screen-and-reconnecting).
+
+### 14.11. Why will GOAT results not open?
+
+Open the final GOAT output and keep the matching `.finalensemble.xyz` beside it. Check that the conformer count, element order and energies belong to the same calculation. Do not substitute an optimisation trajectory or an intermediate ensemble. See [section 8.6](#86-goat-conformer-ensembles).
+
