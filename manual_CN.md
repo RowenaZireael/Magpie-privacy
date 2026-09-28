@@ -1,8 +1,8 @@
 # Magpie 用户手册
 
-适用版本：1.05 · iPhone、iPad 与 Mac · iOS / iPadOS 26.0 及以上
+适用版本：1.08 · iPhone、iPad 与 Mac · iOS / iPadOS 26.0 及以上
 
-更新日期：2026 年 9 月 22 日
+更新日期：2026 年 9 月 29 日
 
 [English](manual.md)
 
@@ -10,7 +10,7 @@ Magpie 是运行于 iPhone、iPad 和 Mac 的分子可视化与几何处理程�
 
 ## 目录
 
-新增功能快捷入口：[文件与文件夹拖放](#25-在-app-之间拖放文件与文件夹)、[后台 SSH](#34-切换-app锁屏与重新连接)、[Apple Pencil](#58-apple-pencil)、[GOAT 输入](#76-orca-goat-构象采样)和[构象结果](#86-goat-构象集合)。
+新增功能快捷入口：[复制粘贴](#26-复制粘贴)、[氢键与动态成键](#43-化学键显示)、[3D 模型与动画导出](#45-导出-3d-模型与动画)、[TDDFT 与 SOC 设置](#77-orca-tddft-与自旋轨道耦合)、[SOC 结果](#87-自旋轨道耦合soc)和[材质与 GPU 表面设置](#13-设置)。
 
 1. [基本使用与入门](#1-基本使用与入门)
 2. [文件与文件夹](#2-文件与文件夹)
@@ -97,7 +97,7 @@ XYZ（含多帧轨迹）的元素列支持元素符号、1–118 的原子序数
 长按文件，或使用鼠标右键，打开文件菜单：
 
 - **Open as Text**：按原始文本打开输入、输出或其他文本文件。
-- **Copy**：在当前目录创建副本。
+- **Copy**：选定要复制的项目，再到目标目录选择 **Paste** 创建副本。
 - **Rename**：重命名。
 - **Delete**：确认后删除所选项目。
 - **Export File**：通过系统文件界面导出副本。
@@ -129,6 +129,14 @@ XYZ（含多帧轨迹）的元素列支持元素符号、1–118 的原子序数
 拖入后自动打开最后一个受支持的顶层文件；文件夹只导入、不自动打开。DCD 仍需从参考 XYZ 附加。Local 或远程 Multiwfn 不可用时，波函数只导入；服务器 Multiwfn 可用时按原有流程打开。
 
 每个传输项目的上限为 512 MiB，文件夹按整个目录内容合计；不跟随符号链接。对于 GOAT 等需要配套文件的结果，传输所在文件夹有助于保留相互匹配的文件名。
+
+### 2.6. 复制粘贴
+
+1. 长按或右键点击文件，选择 **Copy**。Local 中也可以复制文件夹。
+2. 进入目标目录，在文件浏览器菜单中选择 **Paste**；也可以在目标文件夹的菜单中直接选择 Paste。
+3. 再次粘贴可创建另一个副本。遇到重名时，Magpie 自动为新副本使用不重复的名称，保留已有内容。
+
+复制粘贴在当前 Local 或 SSH 连接内进行，切换连接后清除已复制项目。SSH 与 Local 之间的传输使用前文介绍的 Download to Local 或导入操作。
 
 ## 3. 连接服务器
 
@@ -225,11 +233,30 @@ SSH 已连接时，切换 App 或锁屏会申请临时后台执行时间，以�
 
 MOL2 文件保留原有的显式键信息。对于只有坐标的结构，Magpie 根据几何与局部化学环境识别连接和键级。芳香键、酰胺键与共振键采用相同的部分双键外观，但各自的化学含义会保留。
 
+**Settings → Molecule Viewer → Show Hydrogen Bonds** 默认开启，以浅粉色虚线显示符合几何条件的氢键。结构中需要包含显式氢原子；氢键显示不改变结构的化学键信息。
+
+**Dynamic Bonds** 默认关闭。开启后，轨迹和振动播放会根据当前几何更新连接及键级；关闭时使用参考结构的固定化学键。关闭 Dynamic Bonds 时，多帧 XYZ 和 DCD 均以最后一帧的连接和键级作为整段轨迹的固定成键依据。Geometry Editor 使用编辑后的化学键。
+
 ### 4.4. 元素外观与工作区行为
 
 全部 118 个元素均有对应配色和显示半径。颜色用于辨认元素，不代表实测发光颜色；显示尺寸大体按参考共价半径缩放，氢采用较紧凑的显示尺寸。这些外观设置不改变坐标、成键判断或力场参数。
 
 界面保持深色外观，不随系统主题切换。在 iPad 上可拖动侧栏分隔条调节文件浏览器宽度，打开 GOAT 图表后也可调整。滚动文件列表或结果面板时，自动旋转、轨迹和振动继续播放；弹窗或离开 App 仍可能暂停场景。
+
+### 4.5. 导出 3D 模型与动画
+
+在分子画布上点击 **Export 3D model**（方框向上箭头按钮），选择导出格式。导出前可调整视角、表面透明度和化学键显示选项。
+
+| 格式或菜单选项 | 导出内容 |
+| --- | --- |
+| **GLB (glTF 2.0)** | 当前分子结构及已显示表面的静态 3D 模型 |
+| **USDZ** 或 **USDZ → Current Frame** | 当前结构及已显示表面的静态 3D 模型 |
+| **USDZ → Animation** | 已加载轨迹的 3D 动画 |
+| **USDZ Animation** | 正在播放的分子振动、模型旋转或两者组合 |
+
+导出轨迹时，打开多帧文档，选择 **USDZ → Animation**。导出振动时，先在 Results 中选择模式并开启 **Play Vibration**；导出旋转模型时，先开启自动旋转。旋转或振动开启期间，USDZ 菜单提供动画导出；停止后可导出静态 USDZ。振动播放优先于已加载的轨迹。
+
+在系统保存窗口中选择文件名和保存位置。模型保留分子与表面的颜色及透明度。轨迹和振动动画中的表面相对分子保持固定，模型旋转时表面随整体旋转。Dynamic Bonds 和 Show Hydrogen Bonds 设置也用于动画导出。导出模型的光照和材质观感取决于打开它的查看器。
 
 ## 5. 搭建与编辑分子
 
@@ -275,7 +302,7 @@ Add atom 模式下，点击已有原子会替换其元素。从一个已有原�
 | A、B、C | Angle | A 绕 B 移动 |
 | A、B、C、D | Dihedral | A 一侧绕 B–C 旋转 |
 
-选择控件后拖动滑块。键长单位为 Å，角度单位为度。结构扩展到视野外时，点击 **Reset view** 重新适配。
+选择控件后拖动滑块。键长单位为 Å，角度单位为度。键角支持 0°–360° 连续调整，可跨越共线位置，也可松手后继续拖动。二面角范围为 −180° 至 +180°。结构扩展到视野外时，点击 **Reset view** 重新适配。
 
 再次点击已激活的几何控件，会退回选择模式并保留原子及其选择顺序。没有选择原子或编辑被锁定时，R 和 T 不可用。
 
@@ -509,9 +536,18 @@ Workers、Temperature 和 Energy window 可留空显示 **Default**，生成时�
 
 可从 GOAT 输入及输出回显恢复已支持的设置。导入的非默认高级参数即使没有独立表单控件，也会保留在预览中。切换到 Gaussian 时，GOAT 任务恢复为 OPT。
 
+### 7.7. ORCA TDDFT 与自旋–轨道耦合
+
+1. 在 Generate 中选择 **ORCA → Job → TDDFT**，设置 **Excited states**。
+2. 对于闭壳层单重态计算，将 **Additional spin states** 设为 **Triplets** 可加入三重态，默认值为 **None**。
+3. 开启 **SOC** 请求自旋–轨道耦合计算，同时自动包含 Triplets。SOC 默认关闭；这组单重态–三重态选项适用于闭壳层单重态参考。
+4. 保存输入并使用 ORCA 运行计算，再在 Magpie 中打开输出，查看光谱、跃迁和 SOC 结果。
+
 ## 8. 查看计算结果
 
 打开支持的计算输出文件，显示 **Results**。面板菜单按文件中记录的计算内容提供对应项目。
+
+在 iPad 上，可向上拖动 Results 底边栏，为表格和图谱留出更多空间。
 
 ### 8.1. 详情与几何优化
 
@@ -544,9 +580,9 @@ ORCA 的配套文件应与主输出放在同一目录。Magpie 会读取可用�
 
 ### 8.5. UV–Vis 与轨道跃迁
 
-对于 TDDFT 或其他可识别的激发态输出，**UV-Vis Spectrum** 显示以波长为横轴的吸收光谱，波长单位为 nm。图中标出的 FWHM（半峰全宽）表示光谱展宽所用的峰宽。
+对于 TDDFT 或其他可识别的激发态输出，**UV-Vis** 显示以波长为横轴的吸收光谱，波长单位为 nm。图中标出的 FWHM（半峰全宽）表示光谱展宽所用的峰宽。
 
-**Orbital Transitions** 列出激发态、跃迁轨道对、自旋标记和贡献百分比。它用于阅读输出中的跃迁组成；从波函数生成空间轨道则使用 Molecular Orbitals 侧栏。
+**Transitions** 列出激发态、跃迁轨道对、自旋标记和贡献百分比。它用于阅读输出中的跃迁组成；从波函数生成空间轨道则使用 Molecular Orbitals 侧栏。
 
 ### 8.6. GOAT 构象集合
 
@@ -562,11 +598,19 @@ ORCA 的配套文件应与主输出放在同一目录。Magpie 会读取可用�
 
 最终构象表或 ensemble 缺失、损坏或不匹配时，Magpie 显示 GOAT 专用错误。检查两份文件是否来自同一次已完成的计算，并保留相互匹配的名称。
 
+### 8.7. 自旋–轨道耦合（SOC）
+
+打开包含 SOC 结果的 ORCA 输出。在 **UV-Vis** 中，原始与 SOC 修正光谱在数据齐全时上下排列。横向拖动可平移波长范围，横向捏合或使用触控板可缩放，两张图始终对齐。点击 **Reset** 恢复初始范围；纵向滚动仍用于浏览 Results 内容。
+
+选择 **SOC** 查看按耦合强度降序排列的表格，单位为 cm⁻¹。点击一行，下方联动的单重态–三重态能级图会高亮对应的两个态及其连线。能级图包含 S0，能量单位为 eV。**Transitions** 列出输出中激发态的轨道贡献。选项卡和图谱根据输出实际包含的数据显示。
+
 ## 9. 播放轨迹
 
 ### 9.1. 多帧 XYZ
 
 打开 XYZ 文件，选择 **Trajectory**。点击 Play 播放，拖动 Frame 滑块选择结构，通过 **Speed** 调整每秒播放帧数。开启 **Settings → Molecule Viewer → Loop Trajectory Playback** 可循环播放。
+
+加载后默认显示最后一帧，初始播放速度根据帧数设置，可通过 Speed 修改。固定或动态成键的选择见[化学键显示](#43-化学键显示)。
 
 ### 9.2. DCD 与参考 XYZ
 
@@ -574,7 +618,7 @@ ORCA 的配套文件应与主输出放在同一目录。Magpie 会读取可用�
 2. 打开单帧 XYZ。
 3. 在 Results 中点击 Details 旁的 **Load trajectory (.dcd)**。
 4. 选择配套 DCD。
-5. 使用 Trajectory 控件播放或逐帧查看。
+5. 加载完成后停在 DCD 最后一帧，播放暂停，速度按新的帧数设置。使用 Trajectory 控件播放或逐帧查看。
 
 XYZ 提供元素和原子顺序，DCD 提供各帧坐标。使用生成轨迹时配套写出的 XYZ，使两者的原子数和顺序一致。Magpie 读取标准 ORCA 风格的 DCD 坐标轨迹；固定原子压缩和四维变体需先转换。
 
@@ -607,11 +651,15 @@ ESP 先选电子密度 CUBE，再选静电势 CUBE。Interaction 使用同一次
 ### 10.3. 表面控件
 
 - **Iso Value**：选择绘制等值面的数值。
-- **Render Quality**：调整表面采样质量。
+- **Render Quality**：调整表面采样质量，默认为 **Ultra**。
 - **Surface Opacity**：调整表面透明度。
-- **Settings → Molecule Viewer → Surface Material**：选择 Constant 或 Lambert 材质。
+- **Settings → Molecule Viewer → Surface Material**：选择 **Constant**、**Lambert**、**Satin**、**Glossy** 或 **Toon**，默认为 Lambert。
 
 调整大型表面时可先降低 Render Quality，确定视角和等值面后再提高质量。
+
+**Settings → Molecule Viewer → GPU Cube Acceleration (Beta)** 默认开启，用于加速 CUBE 表面生成，也适用于 Molecular Orbitals 和 Quick ESP 表面。关闭后使用 CPU 生成表面。离开 Settings 后，当前表面会重新生成，并保留视角和显示设置。
+
+通过[Export 3D model](#45-导出-3d-模型与动画) 可将显示中的分子和表面保存为 GLB 或 USDZ。
 
 ### 10.4. ESP 色标
 
@@ -676,12 +724,18 @@ Molecular Orbitals、Quick ESP 和交互式 Multiwfn 共用运行环境，结束
 | Molecule Viewer | Viewer Background | 画布背景颜色 |
 | Molecule Viewer | Lighting Intensity | 主光强度 |
 | Molecule Viewer | Fill Light | 阴影区域的补光 |
-| Molecule Viewer | Surface Material | Constant (Default) 为平坦着色，Lambert 为漫反射光照 |
+| Molecule Viewer | Show Hydrogen Bonds | 以虚线显示氢键，默认开启 |
+| Molecule Viewer | Dynamic Bonds | 轨迹和振动播放时更新连接及键级，默认关闭 |
+| Molecule Viewer | Atom & Bond Material | 为原子和键选择 Constant、Lambert、Satin、Glossy 或 Toon，默认 Lambert |
+| Molecule Viewer | Surface Material | 从上述五种材质中独立选择表面材质，默认 Lambert |
+| Molecule Viewer | GPU Cube Acceleration (Beta) | 使用 GPU 生成表面，默认开启 |
 | Molecule Viewer | Loop Trajectory Playback | 轨迹循环播放 |
 | Geometry Editor | Force Field | 选择 UFF 或 MMFF94s |
 | Geometry Editor | Freeze Selected Atoms | 在下一轮优化中固定所选原子 |
 | File Browser | Show Hidden Files | 显示名称以点开头的文件和文件夹 |
 | Analysis | Orbital Energy Unit | 选择 a.u. 或 eV |
+
+Constant 为平坦着色，Lambert 为漫反射光照，Satin 提供柔和高光，Glossy 提供更明显的高光，Toon 使用分层明暗效果。原子与键、表面的材质分别保存；更新 App 后沿用已有设置。
 
 About 显示 App 版本；Credits 和 Open Source Software 列出使用的科学软件、库及许可信息，其中 Jmol 是部分元素配色的参考来源。
 
