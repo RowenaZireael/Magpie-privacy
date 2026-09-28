@@ -1,8 +1,8 @@
 # Magpie User Manual
 
-Version 1.05 · iPhone, iPad and Mac · iOS / iPadOS 26.0 or later
+Version 1.08 · iPhone, iPad and Mac · iOS / iPadOS 26.0 or later
 
-Last updated: 22 September 2026
+Last updated: 29 September 2026
 
 [中文版](manual_CN.md)
 
@@ -10,7 +10,7 @@ Magpie is a molecular visualisation and geometry-processing application for iPho
 
 ## Contents
 
-Frequently used additions: [file and folder drag and drop](#25-drag-files-and-folders-between-apps), [background SSH](#34-switching-apps-locking-the-screen-and-reconnecting), [Apple Pencil](#58-apple-pencil), [GOAT input](#76-orca-goat-conformational-sampling) and [conformer results](#86-goat-conformer-ensembles).
+New feature guides: [copy and paste](#26-copy-and-paste), [hydrogen bonds and dynamic bonding](#43-bonds), [3D model and animation export](#45-export-3d-models-and-animations), [TDDFT and SOC setup](#77-orca-tddft-and-spinorbit-coupling), [SOC results](#87-spinorbit-coupling-soc) and [materials and GPU surfaces](#13-settings).
 
 1. [General use and first steps](#1-general-use-and-first-steps)
 2. [Files and folders](#2-files-and-folders)
@@ -97,7 +97,7 @@ Tap a folder to enter it. The **../** row at the top returns to the parent folde
 Long-press a file, or right-click with a pointer, to open its menu:
 
 - **Open as Text** opens the raw contents of an input, output or other text-based file.
-- **Copy** creates another copy in the current directory.
+- **Copy** selects an item to copy; use **Paste** in the destination directory to create the copy.
 - **Rename** changes the file name.
 - **Delete** removes the selected item after confirmation.
 - **Export File** saves a copy through the system file interface.
@@ -129,6 +129,14 @@ Whole-folder transfers preserve the directory structure. Uploads and downloads s
 After an incoming drop, Magpie opens the last supported top-level file; folders are imported without opening. DCD files remain available for attachment to a reference XYZ. Wavefunction files are imported without opening in Local or when remote Multiwfn is unavailable; an available server Multiwfn environment enables the usual opening workflow.
 
 The transfer limit is 512 MiB per item, counting the complete contents of a folder. Symbolic links are not followed. For GOAT and other results with companion files, transferring their containing folder helps preserve matching names.
+
+### 2.6. Copy and paste
+
+1. Long-press or right-click a file and choose **Copy**. In Local, you can also copy a folder.
+2. Navigate to the destination directory and choose **Paste** from the file-browser menu. You can also choose Paste from a folder’s context menu to copy directly into that folder.
+3. Paste again to create another copy. Existing items are kept; each new copy receives a unique name when needed.
+
+Copy and Paste work within the current Local or SSH connection. Switching connections clears the copied item. For transfers between SSH and Local, use Download to Local or the import controls described above.
 
 ## 3. Connecting to a server
 
@@ -225,11 +233,30 @@ Tap a selected atom to remove it from the measurement. Double-tap empty space to
 
 MOL2 files retain their explicit bond information. For coordinate-only structures, Magpie determines connections and bond orders from the geometry and local chemical environment. Aromatic, amide and resonant bonds share a partial-double visual style while retaining their separate chemical meanings.
 
+In **Settings → Molecule Viewer**, **Show Hydrogen Bonds** is on by default. It displays suitable hydrogen contacts as pale pink dashed lines. The structure needs explicit hydrogen atoms; these contacts are for display and leave the structure’s bond assignments unchanged.
+
+**Dynamic Bonds** is off by default. Enable it to update connections and bond orders from the current geometry during trajectory and vibration playback. With it off, Magpie uses the reference bonds. With Dynamic Bonds off, multi-frame XYZ and DCD trajectories use the final frame’s connections and bond orders throughout playback. Geometry Editor uses the bonds you edit.
+
 ### 4.4. Element appearance and workspace behaviour
 
 All 118 elements have assigned colours and display radii. The colours aid identification; they are not a measurement of emitted light. Display sizes broadly follow reference covalent radii, with a compact hydrogen display. These visual sizes do not change coordinates, inferred bonds or force-field parameters.
 
 The interface retains its dark appearance regardless of the system theme. On iPad, use the sidebar divider to resize the file browser, including while GOAT charts are open. Auto-rotation, trajectory playback and vibrations continue while scrolling the file list or result panels; presentations and leaving the app can still pause the scene.
+
+### 4.5. Export 3D models and animations
+
+Tap **Export 3D model**, the square-and-up-arrow button on the molecular canvas, and choose a format. Set the view, surface opacity and bond-display options before exporting.
+
+| Format or menu option | Exported content |
+| --- | --- |
+| **GLB (glTF 2.0)** | The current molecular structure and displayed surfaces as a static 3D model |
+| **USDZ** or **USDZ → Current Frame** | The current structure and displayed surfaces as a static 3D model |
+| **USDZ → Animation** | The loaded trajectory as a 3D animation |
+| **USDZ Animation** | The active molecular vibration, model rotation, or their combination |
+
+For a trajectory, open a multi-frame document and choose **USDZ → Animation**. To export a vibration, select a mode in Results and start **Play Vibration** first. To export a rotating model, turn on auto-rotation first. While rotation or vibration is active, the USDZ menu offers animation export; stop them to export a static USDZ. An active vibration takes priority over the loaded trajectory.
+
+Choose a file name and destination in the system save dialog. Exports retain molecular and surface colours and transparency. Displayed surfaces stay fixed relative to the molecule during trajectory and vibration animations and rotate with the whole model. Dynamic Bonds and Show Hydrogen Bonds also apply to animations. Lighting and material appearance depend on the app used to view the exported model.
 
 ## 5. Building and editing molecules
 
@@ -275,7 +302,7 @@ Tap the atoms in order rather than box-selecting them. The matching geometry but
 | A, B, C | Angle | A moves around B |
 | A, B, C, D | Dihedral | The A side rotates about B–C |
 
-Choose the control and adjust its slider. Distances are shown in Å and angles in degrees. Use **Reset view** after extending a structure beyond the visible area.
+Choose the control and adjust its slider. Distances are shown in Å and angles in degrees. Bond angles can be adjusted continuously from 0° to 360°, including through a straight-line geometry and across repeated drags. Dihedral angles range from −180° to +180°. Use **Reset view** after extending a structure beyond the visible area.
 
 Tap the active geometry control again to return to Select while keeping the selected atoms and their order. R and T are unavailable without a selection or while editing is locked.
 
@@ -509,9 +536,16 @@ Workers, Temperature and Energy window can be left blank as **Default**; their k
 
 Supported settings can be recovered from GOAT inputs and output echoes. Imported non-default advanced settings are retained in the preview even when they have no dedicated form control. Switching to Gaussian changes the GOAT job back to OPT.
 
+### 7.7. ORCA TDDFT and spin–orbit coupling
+
+1. In Generate, choose **ORCA → Job → TDDFT** and set **Excited states**.
+2. For a closed-shell singlet calculation, set **Additional spin states** to **Triplets** to include triplet states. The default is **None**.
+3. Turn on **SOC** to request spin–orbit coupling. This also includes Triplets. SOC is off by default, and these singlet–triplet options are available for closed-shell singlet references.
+4. Save the input, run the calculation with ORCA, then open the output in Magpie to inspect the spectra, transitions and SOC results.
+
 ## 8. Calculation results
 
-Open a supported calculation output and show **Results**. The panel menu follows the data recorded in the calculation.
+Open a supported calculation output and show **Results**. The panel menu follows the data recorded in the calculation. On iPad, drag the Results drawer upward to give tables and plots more room.
 
 ### 8.1. Details and optimisation
 
@@ -544,9 +578,9 @@ Ordinary sample markers are smaller and less opaque on dense grids so they obscu
 
 ### 8.5. UV–Vis and orbital transitions
 
-For a TDDFT or other supported excited-state output, **UV-Vis Spectrum** displays the absorption spectrum against wavelength in nm. The displayed FWHM (full width at half maximum) gives the peak width used for spectral broadening.
+For a TDDFT or other supported excited-state output, **UV-Vis** displays the absorption spectrum against wavelength in nm. The displayed FWHM (full width at half maximum) gives the peak width used for spectral broadening.
 
-**Orbital Transitions** lists the excited states, orbital pairs, spin labels and contribution percentages reported or derived from the output. This is separate from the Molecular Orbitals sidebar, which generates spatial orbitals from a wavefunction file.
+**Transitions** lists the excited states, orbital pairs, spin labels and contribution percentages reported or derived from the output. This is separate from the Molecular Orbitals sidebar, which generates spatial orbitals from a wavefunction file.
 
 ### 8.6. GOAT conformer ensembles
 
@@ -562,11 +596,19 @@ In **Conformation**, use the conformer menu, arrows or slider, or select a bar i
 
 If the final table and ensemble are missing, damaged or inconsistent, Magpie displays a GOAT-specific error. Check that both files come from the same completed calculation and retain their matching names.
 
+### 8.7. Spin–orbit coupling (SOC)
+
+Open an ORCA output containing SOC results. In **UV-Vis**, the original and SOC-corrected spectra appear one above the other when both are available. Drag horizontally to pan or pinch horizontally to zoom the wavelength range; the plots remain aligned. Trackpad zoom is also supported. **Reset** restores the initial range, and vertical scrolling moves through the Results drawer.
+
+Choose **SOC** to see the coupling table, sorted by strength in cm⁻¹, and the linked singlet–triplet energy diagram. Select a table row to highlight its two states and their connection. The diagram includes S0 and displays energies in eV. **Transitions** provides the orbital contributions for the reported excited states. The available tabs and plots follow the data present in the output.
+
 ## 9. Trajectories
 
 ### 9.1. Multi-frame XYZ
 
 Open the XYZ file and select **Trajectory**. Tap Play, drag the Frame slider to inspect a particular structure, and adjust **Speed** in frames per second. Enable **Settings → Molecule Viewer → Loop Trajectory Playback** to repeat the sequence.
+
+The document opens at its final frame. The initial playback speed is set from the number of frames; use Speed to change it. See [Bonds](#43-bonds) to choose fixed or dynamic bonding.
 
 ### 9.2. DCD with a reference XYZ
 
@@ -574,7 +616,7 @@ Open the XYZ file and select **Trajectory**. Tap Play, drag the Frame slider to 
 2. Open the single-frame XYZ.
 3. In Results, tap **Load trajectory (.dcd)** beside Details.
 4. Choose the matching DCD file.
-5. Use the Trajectory controls to play or inspect the frames.
+5. Loading finishes at the final DCD frame with playback paused and the speed set for the new frame count. Use the Trajectory controls to play or inspect the frames.
 
 The XYZ supplies the element identities and atom order; the DCD supplies the changing coordinates. Use the XYZ written with the trajectory so that both have the same atom count and ordering. Magpie reads standard ORCA-style DCD coordinate trajectories; fixed-atom compressed and four-dimensional variants need conversion before import.
 
@@ -607,11 +649,15 @@ For ESP, open the density CUBE first and the potential CUBE second. For Interact
 ### 10.3. Surface controls
 
 - **Iso Value** selects the value at which the surface is drawn.
-- **Render Quality** changes the surface sampling quality.
+- **Render Quality** changes the surface sampling quality; the default is **Ultra**.
 - **Surface Opacity** makes the surface more transparent or opaque.
-- **Settings → Molecule Viewer → Surface Material** chooses Constant or Lambert shading.
+- **Settings → Molecule Viewer → Surface Material** chooses **Constant**, **Lambert**, **Satin**, **Glossy** or **Toon**. Lambert is the default.
 
 Lower the render quality while adjusting a large surface, then raise it for closer inspection.
+
+**Settings → Molecule Viewer → GPU Cube Acceleration (Beta)** is on by default and accelerates CUBE surface generation, including Molecular Orbitals and Quick ESP surfaces. Turn it off to generate surfaces on the CPU. After closing Settings, the current surface rebuilds with your view and display settings retained.
+
+Use [Export 3D model](#45-export-3d-models-and-animations) to save the displayed molecule and surface as GLB or USDZ.
 
 ### 10.4. ESP colour scale
 
@@ -676,12 +722,18 @@ Molecular Orbitals, Quick ESP and interactive Multiwfn share the Multiwfn enviro
 | Molecule Viewer | Viewer Background | Choose the canvas background |
 | Molecule Viewer | Lighting Intensity | Adjust the main light |
 | Molecule Viewer | Fill Light | Adjust illumination in shaded areas |
-| Molecule Viewer | Surface Material | Constant (Default) for flat shading; Lambert for diffuse lighting |
+| Molecule Viewer | Show Hydrogen Bonds | Display hydrogen contacts as dashed lines; on by default |
+| Molecule Viewer | Dynamic Bonds | Update connections and bond orders during trajectory and vibration playback; off by default |
+| Molecule Viewer | Atom & Bond Material | Choose Constant, Lambert, Satin, Glossy or Toon for atoms and bonds; default Lambert |
+| Molecule Viewer | Surface Material | Choose the surface material independently from the same five options; default Lambert |
+| Molecule Viewer | GPU Cube Acceleration (Beta) | Use GPU surface generation; on by default |
 | Molecule Viewer | Loop Trajectory Playback | Repeat trajectories |
 | Geometry Editor | Force Field | Choose UFF or MMFF94s |
 | Geometry Editor | Freeze Selected Atoms | Hold the selected atoms fixed in the next optimisation |
 | File Browser | Show Hidden Files | Show dot-prefixed files and folders |
 | Analysis | Orbital Energy Unit | Choose a.u. or eV |
+
+Constant gives flat shading, Lambert diffuse lighting, Satin soft highlights, Glossy stronger highlights, and Toon stepped light and shade. Atom & Bond Material and Surface Material are saved independently. Existing saved preferences are retained when updating the app.
 
 About shows the app version. Credits and Open Source Software list the scientific software, libraries and their notices, including Jmol as a reference for some element colours.
 
