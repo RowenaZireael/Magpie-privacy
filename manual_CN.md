@@ -1,16 +1,16 @@
 # Magpie 用户手册
 
-适用版本：1.08 · iPhone、iPad 与 Mac · iOS / iPadOS 26.0 及以上
+适用版本：1.13 · iPhone、iPad 与 Mac · iOS / iPadOS 26.0 及以上
 
-更新日期：2026 年 9 月 29 日
+更新日期：2026 年 10 月 18 日
 
 [English](manual.md)
 
-Magpie 是运行于 iPhone、iPad 和 Mac 的分子可视化与几何处理程序，可读取分子坐标和计算输出，编辑结构、进行本地力场优化，并生成量子化学程序包输入文件及坐标文件。通过 SSH 连接，可以访问远程计算目录并调用 Multiwfn 分析波函数。
+Magpie 是运行于 iPhone、iPad 和 Mac 的分子可视化与几何处理程序，可读取分子坐标和计算输出，编辑结构、进行本地力场优化，并生成量子化学程序包输入文件及坐标文件。支持的文本波函数可直接使用设备 GPU 计算分子轨道。通过 SSH 连接，可以访问远程计算目录并调用 Multiwfn 分析波函数。
 
 ## 目录
 
-新增功能快捷入口：[复制粘贴](#26-复制粘贴)、[氢键与动态成键](#43-化学键显示)、[3D 模型与动画导出](#45-导出-3d-模型与动画)、[TDDFT 与 SOC 设置](#77-orca-tddft-与自旋轨道耦合)、[SOC 结果](#87-自旋轨道耦合soc)和[材质与 GPU 表面设置](#13-设置)。
+功能快捷入口：[本地 GPU 分子轨道](#111-分子轨道)、[轨道网格与计算方式设置](#113-本地-gpu-设置与远程计算方式)、[CUBE 分享](#114-分享轨道-cube)、[高清 PNG 导出](#46-导出-png-图片)、[3D 模型与动画导出](#45-导出-3d-模型与动画)和[设置](#13-设置)。
 
 1. [基本使用与入门](#1-基本使用与入门)
 2. [文件与文件夹](#2-文件与文件夹)
@@ -31,9 +31,9 @@ Magpie 是运行于 iPhone、iPad 和 Mac 的分子可视化与几何处理程�
 
 ### 1.1. 工作环境
 
-Local 是 Magpie 的设备本地文件区。结构查看、编辑、力场优化、输入生成、CUBE 渲染和计算结果分析均在本地完成。连接 SSH 主机后可使用远程文件浏览器和 Terminal；Molecular Orbitals、Quick ESP 及交互式 Multiwfn 调用服务器上的 Multiwfn。
+Local 是 Magpie 的设备本地文件区。结构查看、编辑、力场优化、输入生成、CUBE 渲染、计算结果分析及支持的分子轨道计算均可在本地完成。连接 SSH 主机后可使用远程文件浏览器和 Terminal。Quick ESP 及交互式 Multiwfn 需要服务器上的 Multiwfn；分子轨道可使用 Local GPU 或 Remote Multiwfn，详见第 11 节。
 
-工作区由文件浏览器、文档区域和 Results 抽屉组成，分子轨道列表和终端面板在文档旁展开。本手册中的控件名称与 App 界面一致。
+工作区由文件浏览器、文档区域和 Results 组成。iPhone 的文件与结果共用可切换的左侧栏，iPad 的 Results 位于底部抽屉。分子轨道列表和终端面板在文档旁展开。本手册中的控件名称与 App 界面一致。
 
 Magpie 显示的原子编号从 1 开始；几何控件中的距离使用 Å，角度使用度。Generate 按所选程序的输入语法转换编号和单位。
 
@@ -84,7 +84,8 @@ H  -0.758602   0.000000   0.504284
 | 计算输出 | 支持的量子化学程序包文本输出，常见扩展名为 `.out`、`.log` | 查看结构、能量、优化、振动、IRC、扫描及电子激发结果 |
 | 体积数据 | `.cub`、`.cube` | 分子轨道、WFN Analysis、Interaction 和 ESP 表面 |
 | 轨迹 | 多帧 `.xyz`；配合参考 XYZ 使用的 `.dcd` | 播放连续结构 |
-| 远程波函数 | `.molden`、`.mwfn`、`.gms`、`.wfn`、`.wfx`、`.fchk`、`.fch`、`.chk`、`.gbw` | 通过服务器上的 Multiwfn 打开 |
+| 本地 GPU 波函数 | `.mwfn`、`.fchk`、`.fch`、`.molden`、`.wfn`、`.wfx` | 在设备上计算支持的实数分子轨道；也可打开远程支持的文本波函数 |
+| 其他远程波函数 | `.gms`、`.chk`、`.gbw` | 需要服务器 Multiwfn；CHK、GBW 还需要相应转换程序 |
 | 文本 | `.txt`、`.text`、`.md`、`.csv`、`.tsv` | 阅读与编辑文本 |
 | 图片 | PNG、JPEG、HEIC / HEIF、GIF、BMP、TIFF | 预览、缩放和平移 |
 
@@ -92,7 +93,7 @@ XYZ（含多帧轨迹）的元素列支持元素符号、1–118 的原子序数
 
 ### 2.2. 浏览与整理
 
-点击文件夹进入，点击列表顶部的 **../** 返回上级目录。路径栏用于跳转目录，筛选栏用于缩小当前文件列表。远程计算生成新文件后，点击 **Refresh** 刷新。
+点击文件夹进入，点击列表顶部的 **../** 返回上级目录。路径栏用于跳转目录，**Filter files** 只筛选文件，文件夹仍保留供导航；隐藏项目继续遵循 Show Hidden Files 设置。打开或关闭文件会自动刷新当前目录；也可随时点击 **Refresh** 查看新生成的远程计算输出。
 
 长按文件，或使用鼠标右键，打开文件菜单：
 
@@ -126,9 +127,9 @@ XYZ（含多帧轨迹）的元素列支持元素符号、1–118 的原子序数
 
 整文件夹传输保留目录结构，上传和下载均显示进度。取消向外拖动不会启动导出下载。在 Magpie 内将文件拖到文件夹上会移动该文件；放到不接受移动的工作区位置则取消拖动。
 
-拖入后自动打开最后一个受支持的顶层文件；文件夹只导入、不自动打开。DCD 仍需从参考 XYZ 附加。Local 或远程 Multiwfn 不可用时，波函数只导入；服务器 Multiwfn 可用时按原有流程打开。
+拖入后自动打开最后一个受支持的顶层文件；文件夹只导入、不自动打开。DCD 仍需从参考 XYZ 附加。开启 GPU-Accelerated Orbitals 后，支持的文本波函数可在 Local 或 Remote 中打开，无需 Multiwfn。其他远程波函数格式需要 Multiwfn；Local 中不能解析 CHK 和 GBW。
 
-每个传输项目的上限为 512 MiB，文件夹按整个目录内容合计；不跟随符号链接。对于 GOAT 等需要配套文件的结果，传输所在文件夹有助于保留相互匹配的文件名。
+单个 `.cub` / `.cube` 文件支持最高 **2 GiB**；其他传输文件及整个文件夹仍以 **512 MiB** 为上限，文件夹内含有 CUBE 不会提高目录总额度。不跟随符号链接。对于 GOAT 等需要配套文件的结果，传输所在文件夹有助于保留相互匹配的文件名。
 
 ### 2.6. 复制粘贴
 
@@ -169,7 +170,7 @@ XYZ（含多帧轨迹）的元素列支持元素符号、1–118 的原子序数
 | `.chk` | `formchk` |
 | ORCA `.gbw` | `orca_2mkl` |
 
-其余已列出的波函数格式直接交给 Multiwfn 读取。源文件应放在可写的计算目录中，Magpie 会在该目录下创建临时分析文件。
+支持的文本波函数可使用本地 GPU，无需 Multiwfn；其他远程格式及 Quick ESP 使用 Multiwfn。远程分析源文件应放在可写的计算目录中。XYZ 提取及 MWFN 转换从源文件目录运行，并将导出文件写入独立临时目录。转换程序路径在 Multiwfn 设置中配置；分析在临时目录运行时，使用辅助程序的绝对路径有助于正确找到它们。
 
 ### 3.3. Multiwfn 预热命令
 
@@ -215,9 +216,9 @@ SSH 已连接时，切换 App 或锁屏会申请临时后台执行时间，以�
 
 在非编辑、非测量模式下，轻点一个原子，后续视角旋转便以该原子为中心，该原子会高亮显示。轻点其他原子可切换旋转中心；点击 **Reset view** 恢复以整体结构中心旋转，并重置视图。
 
-眼镜按钮开启红蓝立体显示，配合红蓝 3D 眼镜使用。通过红、蓝强度滑块调整两幅图像的亮度。
+眼镜按钮开启红蓝立体显示，配合红蓝 3D 眼镜使用。通过红、蓝强度滑块调整两幅图像的亮度。红蓝模式不显示表面叠加。
 
-文档顶部的侧栏和 Results 按钮可收起对应面板，为结构腾出空间。iPad 可拖动面板分隔条调整大小；iPhone 的分子工作区使用横屏，Terminal 和 Multiwfn 使用竖屏。
+iPhone 使用左侧栏工具栏中的切换按钮在文件与 Results 之间切换，拖动分隔条可调整宽度。打开分子时自动选择 Results，打开文本或图片时选择文件。从侧栏工具栏收起后，可通过文档顶部的 **Show Sidebar** 恢复。iPad 使用文档顶部的 Results 按钮控制底部抽屉，并可拖动面板分隔条调整大小。iPhone 的分子工作区使用横屏，Terminal 和 Multiwfn 使用竖屏。
 
 ### 4.2. 测量
 
@@ -227,7 +228,7 @@ SSH 已连接时，切换 App 或锁屏会申请临时后台执行时间，以�
 - 三个原子 A–B–C：以 B 为顶点的键角。
 - 四个原子 A–B–C–D：绕 B–C 的二面角。
 
-再次点击已选原子可将其移出测量选择；双击空白处清空选择。测量不会改变原子坐标。
+再次点击已选原子可将其移出测量选择；双击空白处清空选择。测量不会改变原子坐标。在原子数和元素顺序一致的轨迹中拖动帧滑块时，已选原子保持选中，测量值随当前帧更新。
 
 ### 4.3. 化学键显示
 
@@ -239,7 +240,7 @@ MOL2 文件保留原有的显式键信息。对于只有坐标的结构，Magpie
 
 ### 4.4. 元素外观与工作区行为
 
-全部 118 个元素均有对应配色和显示半径。颜色用于辨认元素，不代表实测发光颜色；显示尺寸大体按参考共价半径缩放，氢采用较紧凑的显示尺寸。这些外观设置不改变坐标、成键判断或力场参数。
+全部 118 个元素均有对应配色和显示半径。颜色用于辨认元素，不代表实测发光颜色；显示尺寸大体按参考共价半径缩放，氢采用较紧凑的显示尺寸。这些外观设置不改变坐标、成键判断或力场参数。大体系会自动使用渲染优化；深入放大查看时，靠近镜头的原子和键逐渐淡出，方便观察内部，文档中的原子并未删除。
 
 界面保持深色外观，不随系统主题切换。在 iPad 上可拖动侧栏分隔条调节文件浏览器宽度，打开 GOAT 图表后也可调整。滚动文件列表或结果面板时，自动旋转、轨迹和振动继续播放；弹窗或离开 App 仍可能暂停场景。
 
@@ -256,7 +257,18 @@ MOL2 文件保留原有的显式键信息。对于只有坐标的结构，Magpie
 
 导出轨迹时，打开多帧文档，选择 **USDZ → Animation**。导出振动时，先在 Results 中选择模式并开启 **Play Vibration**；导出旋转模型时，先开启自动旋转。旋转或振动开启期间，USDZ 菜单提供动画导出；停止后可导出静态 USDZ。振动播放优先于已加载的轨迹。
 
-在系统保存窗口中选择文件名和保存位置。模型保留分子与表面的颜色及透明度。轨迹和振动动画中的表面相对分子保持固定，模型旋转时表面随整体旋转。Dynamic Bonds 和 Show Hydrogen Bonds 设置也用于动画导出。导出模型的光照和材质观感取决于打开它的查看器。
+准备完成后，在系统分享界面选择 **Save to Files（存储到文件）**、AirDrop 或兼容 App。iPad 使用定位在导出按钮旁的紧凑浮窗，iPhone 使用系统分享面板。模型保留分子与表面的颜色及透明度。轨迹和振动动画中的表面相对分子保持固定，模型旋转时表面随整体旋转。Dynamic Bonds 和 Show Hydrogen Bonds 设置也用于动画导出。导出模型的光照和材质观感取决于打开它的查看器。GLB 和 USDZ 不包含屏幕上的 Constant 描边；需要保留这种图片外观时使用 PNG。
+
+### 4.6. 导出 PNG 图片
+
+1. 调整视角、材质、表面透明度，并停在需要的帧。
+2. 停止自动旋转、轨迹播放和振动播放；任一播放仍在运行时，**Export image** 不可用。
+3. 点击 Export 3D model 旁边或下方的 **Export image**（图片向下箭头按钮）。
+4. 准备完成后，在系统分享界面选择 **Save Image（存储图像）**、**Save to Files（存储到文件）**、AirDrop 或兼容 App。
+
+PNG 保留画布比例，**长边为 6000 像素**，写入 **1000 dpi** 信息和 Display P3 色彩配置。导出按输出分辨率重新渲染当前场景，包含已显示的表面和 Constant 描边，不包含按钮、测量文字、选择标记及 Pencil 预览。
+
+普通 PNG 使用透明背景；红蓝 PNG 使用不透明黑背景，并保留当前立体强度，红蓝模式不显示表面叠加。1.13 改进了表面遮挡、透明度、光照及描边与画布的一致性。将透明 PNG 叠放在与画布相同颜色的背景上，可获得最接近的观感；其他背景或颜色合成方式仍可能产生差异。
 
 ## 5. 搭建与编辑分子
 
@@ -559,6 +571,8 @@ Workers、Temperature 和 Energy window 可留空显示 **Default**，生成时�
 
 选择 **Vibrations**，从频率菜单选择模式，点击 **Play Vibration** 播放。左右箭头切换相邻模式，**Displacement Amplitude** 调整显示的振幅。频率单位为 cm⁻¹，输出中的虚频以负值显示。
 
+ORCA QM/MM 输出的振动会映射到显示的真实 QM 原子，连接原子保持静止。真实 QM 原子几乎不动的模式在 **Unavailable Modes** 下灰显，不参与播放和前后切换；可播放模式列于 **Available Modes**。全部模式均不可用时显示 **No QM Motion**，并禁用播放。
+
 ### 8.3. IRC 与一维扫描
 
 在 Results 中选择 **IRC** 或 **Scan**，查看能量曲线和关联轨迹。点击曲线上的点，画布切换到对应结构。相对能量单位为 kcal/mol。
@@ -588,7 +602,7 @@ ORCA 的配套文件应与主输出放在同一目录。Magpie 会读取可用�
 
 将 GOAT 的 `.out` 和配套 `.finalensemble.xyz` 放在同一个 Local 或 Remote 目录，再打开 `.out`。例如，`sample.out` 应与 `sample.finalensemble.xyz` 配套。输出提供最终构象表，ensemble 提供对应几何；初始优化轨迹或搜索过程中的中间集合不能代替最终构象集合。
 
-在 **Conformation** 中使用构象菜单、左右箭头或滑条，也可点击任一图表中的柱子。三维结构与两张图的选中项同步变化。ORCA 构象编号从 **0** 开始，与 Magpie 的原子编号分开。
+在 **Conformation** 中使用构象菜单或滑条，也可点击任一图表中的柱子。三维结构与两张图的选中项同步变化。ORCA 构象编号从 **0** 开始，与 Magpie 的原子编号分开。
 
 - **Population** 显示百分比，**Relative energy** 的单位为 kcal/mol。
 - iPad 左侧为占比、右侧为能量；iPhone 上方为占比、下方为能量。
@@ -609,6 +623,8 @@ ORCA 的配套文件应与主输出放在同一目录。Magpie 会读取可用�
 ### 9.1. 多帧 XYZ
 
 打开 XYZ 文件，选择 **Trajectory**。点击 Play 播放，拖动 Frame 滑块选择结构，通过 **Speed** 调整每秒播放帧数。开启 **Settings → Molecule Viewer → Loop Trajectory Playback** 可循环播放。
+
+加载期间会先准备整段轨迹的成键信息，大轨迹可能需要更长的打开时间。播放使用原始帧，不进行插帧。
 
 加载后默认显示最后一帧，初始播放速度根据帧数设置，可通过 Speed 修改。固定或动态成键的选择见[化学键显示](#43-化学键显示)。
 
@@ -657,7 +673,7 @@ ESP 先选电子密度 CUBE，再选静电势 CUBE。Interaction 使用同一次
 
 调整大型表面时可先降低 Render Quality，确定视角和等值面后再提高质量。
 
-**Settings → Molecule Viewer → GPU Cube Acceleration (Beta)** 默认开启，用于加速 CUBE 表面生成，也适用于 Molecular Orbitals 和 Quick ESP 表面。关闭后使用 CPU 生成表面。离开 Settings 后，当前表面会重新生成，并保留视角和显示设置。
+Molecular Orbital、WFN Analysis、Interaction 和 ESP 的 CUBE 表面均使用 GPU 生成，原 GPU Cube Acceleration 开关已移除。Analysis 中的 **GPU-Accelerated Orbitals (Beta)** 控制从波函数计算轨道，与从现有 CUBE 提取表面是不同的操作。
 
 通过[Export 3D model](#45-导出-3d-模型与动画) 可将显示中的分子和表面保存为 GLB 或 USDZ。
 
@@ -675,27 +691,52 @@ ESP 先选电子密度 CUBE，再选静电势 CUBE。Interaction 使用同一次
 
 ## 11. 分子轨道与快速 ESP
 
-这两项功能从远程波函数文件出发，调用服务器已准备好的 Multiwfn 环境。
+分子轨道可从支持的文本波函数直接使用设备 GPU 计算，也可调用远程 Multiwfn。Quick ESP 需要远程 Multiwfn。
 
 ### 11.1. 分子轨道
 
-1. 连接服务器，打开波函数文件。
-2. 点击工作区顶部的 **Molecular Orbitals** 按钮。
-3. 在列表中查看轨道能量、占据数和 HOMO / LUMO 标记。非限制性波函数分为 α、β 两列。
-4. 点击轨道，生成并显示其等值面。
-5. 在 Results 中调整 Iso Value、Render Quality 和 Surface Opacity。
+1. 在 **Settings → Analysis** 中保持 **GPU-Accelerated Orbitals (Beta)** 开启，以使用本地计算。
+2. 进入 **Local**，打开内置示例 **methanol.mwfn**，或导入支持的波函数；也可以从 SSH 目录打开波函数。
+3. 点击工作区顶部的 **Molecular Orbitals**。
+4. 查看轨道能量、占据数和 HOMO / LUMO 标记；非限制性波函数分为 α、β 两列。
+5. 选择轨道以显示等值面，选择状态中会标明 **Local GPU** 或 **Remote Multiwfn**。
+6. 在 Results 中调整 **Iso Value**、**Render Quality** 和 **Surface Opacity**。
 
-前线轨道附近的数据会预先准备。双击较远的轨道，还可补齐它与附近已缓存区域之间同一自旋的未缓存轨道。在 **Settings → Analysis → Orbital Energy Unit** 中可切换 a.u. 和 eV。
+Local GPU 支持常见实数分子 Gaussian 基组的 `.mwfn`、`.fchk` / `.fch`、`.molden`、`.wfn` 和 `.wfx`，包括支持的笛卡尔及纯球谐 s–g 函数。复数/旋量、周期体系及更高角动量输入不支持本地计算。WFN/WFX 可能没有虚轨道，列表只显示文件中实际存在的轨道。
+
+初始准备优先处理 HOMO−3 到 LUMO，再补齐 HOMO−5 到 LUMO+2，并按实际轨道范围截取。双击较远轨道，可补齐它与附近已缓存区域之间同一自旋的未缓存轨道。普通选择及范围补齐保留当前等值面数值和透明度。在 Settings 的 **Orbital Energy Unit** 中可选择 a.u. 或 eV。
 
 ### 11.2. 快速 ESP
 
-1. 打开远程波函数文件。
-2. 点击 Molecular Orbitals 旁的 **Quick ESP** 按钮。
-3. Multiwfn 生成电子密度和静电势，Magpie 显示着色表面，并自动适配初始色标。
+1. 打开远程波函数，并确保 Multiwfn 可用。
+2. 点击 Molecular Orbitals 旁的 **Quick ESP**。
+3. Multiwfn 生成电子密度和静电势 CUBE，Magpie 显示着色表面并适配初始色标范围。
 4. 调整等值面，或填写用于多结构比较的统一色标范围。
-5. 选择 **Save Both** 将两份 CUBE 保存到 Local；选择 **Skip** 则继续查看而不保存。
+5. 选择 **Save Both** 将两份 CUBE 保存到 Local 文件夹，或选择 **Skip** 继续查看而不保存。
 
-分子轨道和快速 ESP 使用临时分析文件。将 CUBE 结果保存到 Local 后，可在没有服务器连接时重新查看这些表面。
+远程 Multiwfn 可用时，即使分子轨道使用 Local GPU，仍可使用 Quick ESP。Local 或没有 Multiwfn 的远程连接不提供 Quick ESP。保存后可通过 ESP 配对流程打开电子密度与静电势 CUBE，离线查看结果。
+
+### 11.3. 本地 GPU 设置与远程计算方式
+
+| 设置 | 含义 |
+| --- | --- |
+| **GPU-Accelerated Orbitals (Beta)** | 默认开启，允许本地轨道计算；关闭后可在 Multiwfn 可用的远程连接中使用原远程流程。Local 波函数需要开启此项。 |
+| **WFN File Size threshold (MB)** | 默认 **10 MB**，使用十进制 MB。远程 Multiwfn 可用时，严格小于阈值的受支持文本输入可下载到设备计算；修改后影响后续打开。 |
+| **Grid Points per Axis** | 默认 **120**，范围 **16–360**。该值的立方表示名义总点数预算；实际 X/Y/Z 点数按分子形状、相同间距分配，端点取整后总点数可能略高于预算。 |
+
+Local 输入，以及没有 Multiwfn 时的受支持远程文本输入，不受上述大小阈值限制。远程 CHK/GBW 始终需要 Multiwfn 和配置好的转换程序。Multiwfn 可用时，较大或二进制输入先提取并显示结构，再尝试转换为 MWFN；转换结果小于阈值且兼容时采用本地计算，否则保留 Remote Multiwfn。已经较大的 MWFN 不会反复转换；仍有效的当前本地快照可复用。
+
+提高网格设置可细化轨道采样，同时增加计算、内存、存储及 CUBE 导出开销。**Render Quality** 控制从采样网格提取表面的质量，是另一项设置。本地网格在分子与基函数中心包围盒每侧增加 6 Bohr；非常弥散或 Rydberg 轨道可能超出此范围。提高点数只细化间距，不扩大这段留边。
+
+轨道侧栏已打开时修改网格，Magpie 会优先重算当前轨道，再准备前线轨道窗口。旧表面保留到新结果就绪；轨道选择、等值面数值、透明度及 Render Quality 均保留。本地 MO 实际计算期间，Iso Value 滑块暂不接受调整，完成后恢复。
+
+已计算网格使用有容量上限的 RAM 缓存和临时磁盘存储。本地轨道缓存与远程分析缓存各有 3 GB 磁盘额度，旧条目可能被清理并在需要时重算。这些额度不是 App 总内存上限，也不是永久保存；需要保留的结果应主动分享保存。
+
+### 11.4. 分享轨道 CUBE
+
+选中轨道后，使用 **Molecular Orbitals 侧栏中的 CUBE 分享按钮**，在系统分享界面选择存储到文件、AirDrop 或兼容 App。文件名为 `<波函数名>_<原始轨道索引>.cub`，不同自旋通道保留不同的源轨道索引。
+
+本地 GPU 结果写成标准 CUBE；远程结果复用生成的 CUBE。分子轨道不再提供独立的 Save to Local 按钮。要在 Magpie 中保留导出的轨道，可先通过系统界面保存，再将 CUBE 导入 Local。已保存的 CUBE 无需原波函数或服务器连接即可重新打开。
 
 ## 12. 终端与交互式 Multiwfn
 
@@ -715,7 +756,7 @@ ESP 先选电子密度 CUBE，再选静电势 CUBE。Interaction 使用同一次
 
 点击编号选项，或直接在终端输入响应，按 Multiwfn 菜单继续操作。重启按钮针对所选文件重新启动分析。使用程序的退出命令或关闭面板结束本次分析，已准备的环境保留到服务器断开。
 
-Molecular Orbitals、Quick ESP 和交互式 Multiwfn 共用运行环境，结束或关闭当前分析后再启动另一项。普通 Terminal 使用独立会话。
+Remote Multiwfn 轨道计算、Quick ESP 和交互式 Multiwfn 共用运行环境，结束或关闭当前分析后再启动另一项。普通 Terminal 使用独立会话。
 
 ## 13. 设置
 
@@ -728,14 +769,16 @@ Molecular Orbitals、Quick ESP 和交互式 Multiwfn 共用运行环境，结束
 | Molecule Viewer | Dynamic Bonds | 轨迹和振动播放时更新连接及键级，默认关闭 |
 | Molecule Viewer | Atom & Bond Material | 为原子和键选择 Constant、Lambert、Satin、Glossy 或 Toon，默认 Lambert |
 | Molecule Viewer | Surface Material | 从上述五种材质中独立选择表面材质，默认 Lambert |
-| Molecule Viewer | GPU Cube Acceleration (Beta) | 使用 GPU 生成表面，默认开启 |
 | Molecule Viewer | Loop Trajectory Playback | 轨迹循环播放 |
 | Geometry Editor | Force Field | 选择 UFF 或 MMFF94s |
 | Geometry Editor | Freeze Selected Atoms | 在下一轮优化中固定所选原子 |
 | File Browser | Show Hidden Files | 显示名称以点开头的文件和文件夹 |
+| Analysis | GPU-Accelerated Orbitals (Beta) | 使用设备 GPU 计算支持的分子轨道，默认开启 |
+| Analysis | WFN File Size threshold (MB) | 远程文件选择计算方式的阈值，默认 10 MB，详见第 11.3 节 |
+| Analysis | Grid Points per Axis | 本地轨道网格设置，默认 120，范围 16–360；实际各轴点数按分子形状分配 |
 | Analysis | Orbital Energy Unit | 选择 a.u. 或 eV |
 
-Constant 为平坦着色，Lambert 为漫反射光照，Satin 提供柔和高光，Glossy 提供更明显的高光，Toon 使用分层明暗效果。原子与键、表面的材质分别保存；更新 App 后沿用已有设置。
+Constant 为带可见轮廓描边的平坦着色，Lambert 为漫反射光照，Satin 提供柔和高光，Glossy 提供更明显的高光，Toon 使用分层明暗效果。原子与键、表面的材质分别保存；更新 App 后沿用已有设置。
 
 About 显示 App 版本；Credits 和 Open Source Software 列出使用的科学软件、库及许可信息，其中 Jmol 是部分元素配色的参考来源。
 
@@ -743,7 +786,7 @@ About 显示 App 版本；Credits 和 Open Source Software 列出使用的科学
 
 ### 14.1. 生成的文件保存在哪里？
 
-Generate 保存到文件浏览器当前目录。本地操作到 Local 中查找，远程操作刷新服务器目录。CUBE 的 Save / Save Both 使用保存时选定的 Local 文件夹。
+Generate 保存到文件浏览器当前目录。本地操作到 Local 中查找，远程操作刷新服务器目录。CUBE 的 Save / Save Both 使用保存时选定的 Local 文件夹。轨道 CUBE 分享以及 PNG、3D 导出使用系统分享界面中选定的目标。
 
 ### 14.2. 怎样保留编辑后的结构？
 
@@ -759,7 +802,7 @@ Generate 保存到文件浏览器当前目录。本地操作到 Local 中查找�
 
 ### 14.5. 波函数为什么打不开？
 
-从 Remote 打开，并确认预热环境中能够运行 Multiwfn。在 Multiwfn 设置中检查转换程序路径：`.chk` 对应 `formchk`，`.gbw` 对应 `orca_2mkl`。同时确认源文件所在目录可写。集群分配到期后，重新连接以准备新的环境。
+在 Local 中，开启 **GPU-Accelerated Orbitals (Beta)**，并使用支持的 `.mwfn`、`.fchk` / `.fch`、`.molden`、`.wfn` 或 `.wfx`。本地 CHK、GBW 是不能直接解析的二进制格式。远程 CHK/GBW 及其他不支持的输入需要 Multiwfn；检查 `formchk` 或 `orca_2mkl` 路径、源目录写入权限及预热环境。集群分配到期后重新连接。不支持的本地基组或波函数语义需要先转换，或使用支持的远程流程。
 
 ### 14.6. 力场优化报错后应调整什么？
 
@@ -771,7 +814,7 @@ Generate 保存到文件浏览器当前目录。本地操作到 Local 中查找�
 
 ### 14.8. 文件太大，无法导入？
 
-单个文件或传输的整棵目录树上限为 512 MiB，文件夹传输不支持符号链接。CUBE 每个文件支持一个标量数据集，最多 2000 万个网格点。可重新生成较粗网格的 CUBE，或导出较短轨迹供设备查看。
+单个 `.cub` / `.cube` 文件支持最高 **2 GiB**；其他导入文件和整棵文件夹仍为 **512 MiB**，文件夹传输不跟随符号链接。CUBE 每个文件支持一个标量数据集，最多 **64,000,000 个网格点**。大型表面仍受设备可用内存限制；必要时降低本地轨道网格设置、重新生成较粗的 CUBE，或导出较短轨迹。
 
 ### 14.9. 反馈问题
 
@@ -784,4 +827,13 @@ Generate 保存到文件浏览器当前目录。本地操作到 Local 中查找�
 ### 14.11. 为什么 GOAT 结果打不开？
 
 打开最终 GOAT 输出，并将匹配的 `.finalensemble.xyz` 放在旁边。确认构象数量、元素顺序和能量来自同一次计算，不使用优化轨迹或中间构象集合代替。详见[第 8.6 节](#86-goat-构象集合)。
+
+### 14.12. 为什么 Export image 不可用？
+
+停止自动旋转、轨迹播放和振动播放，等待当前导出或分享界面结束，再使用 Export image。
+
+### 14.13. 为什么没有 Quick ESP，或没有列出 LUMO？
+
+即使分子轨道使用本地 GPU，Quick ESP 仍需要远程 Multiwfn。WFN/WFX 可能只包含占据轨道；Magpie 只列出文件中实际存在的轨道，不会补造缺失的虚轨道或 LUMO。
+
 
