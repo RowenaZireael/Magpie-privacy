@@ -1,16 +1,16 @@
 # Magpie User Manual
 
-Version 1.08 · iPhone, iPad and Mac · iOS / iPadOS 26.0 or later
+Version 1.13 · iPhone, iPad and Mac · iOS / iPadOS 26.0 or later
 
-Last updated: 29 September 2026
+Last updated: 18 October 2026
 
 [中文版](manual_CN.md)
 
-Magpie is a molecular visualisation and geometry-processing application for iPhone, iPad and Mac. It reads molecular coordinates and calculation outputs, provides a structure editor and local force-field optimisation, and generates quantum-chemistry input and coordinate files. An SSH connection provides access to remote calculation directories and Multiwfn analysis.
+Magpie is a molecular visualisation and geometry-processing application for iPhone, iPad and Mac. It reads molecular coordinates and calculation outputs, provides a structure editor and local force-field optimisation, and generates quantum-chemistry input and coordinate files. Supported text wavefunctions can be used to calculate molecular orbitals locally on the device GPU. An SSH connection provides access to remote calculation directories and Multiwfn analysis.
 
 ## Contents
 
-New feature guides: [copy and paste](#26-copy-and-paste), [hydrogen bonds and dynamic bonding](#43-bonds), [3D model and animation export](#45-export-3d-models-and-animations), [TDDFT and SOC setup](#77-orca-tddft-and-spinorbit-coupling), [SOC results](#87-spinorbit-coupling-soc) and [materials and GPU surfaces](#13-settings).
+Feature guides: [local GPU orbitals](#111-molecular-orbitals), [orbital grid and backend settings](#113-local-gpu-settings-and-remote-routing), [CUBE sharing](#114-share-an-orbital-cube), [high-resolution PNG export](#46-export-a-png-image), [3D model and animation export](#45-export-3d-models-and-animations), and [settings](#13-settings).
 
 1. [General use and first steps](#1-general-use-and-first-steps)
 2. [Files and folders](#2-files-and-folders)
@@ -31,9 +31,9 @@ New feature guides: [copy and paste](#26-copy-and-paste), [hydrogen bonds and dy
 
 ### 1.1. Working environment
 
-Local is Magpie's on-device file area. Structure viewing, editing, force-field optimisation, input generation, CUBE rendering and calculation-result analysis run locally. An SSH host adds a remote file browser and Terminal. Molecular Orbitals, Quick ESP and interactive Multiwfn use the server's Multiwfn installation.
+Local is Magpie's on-device file area. Structure viewing, editing, force-field optimisation, input generation, CUBE rendering, calculation-result analysis and supported molecular-orbital calculations run locally. An SSH host adds a remote file browser and Terminal. Quick ESP and interactive Multiwfn require the server's Multiwfn installation; molecular orbitals can use Local GPU or Remote Multiwfn as described in section 11.
 
-The workspace consists of a file browser, a document area and a Results drawer. The Molecular Orbitals list and terminal panels open alongside the document. Controls are named as they appear in the app throughout this manual.
+The workspace consists of a file browser, a document area and Results. On iPhone, files and results share a switchable left sidebar; on iPad, Results uses a bottom drawer. The Molecular Orbitals list and terminal panels open alongside the document. Controls are named as they appear in the app throughout this manual.
 
 Atom numbers shown in Magpie start at 1. Geometry controls use Å for distances and degrees for angles. Generate converts the numbering and units into the selected program's input syntax.
 
@@ -84,7 +84,8 @@ Save it as `water.xyz` and open it from the file list. The first line is the ato
 | Calculation output | Text output from supported quantum-chemistry packages, commonly `.out` and `.log` | Structures, energies, optimisation, vibrations, IRC, scans and electronic excitations |
 | Volumetric data | `.cub`, `.cube` | Molecular orbitals, WFN Analysis, Interaction and ESP surfaces |
 | Trajectory | Multi-frame `.xyz`; `.dcd` with a reference XYZ | Play a sequence of structures |
-| Remote wavefunction | `.molden`, `.mwfn`, `.gms`, `.wfn`, `.wfx`, `.fchk`, `.fch`, `.chk`, `.gbw` | Open through the server's Multiwfn installation |
+| Local GPU wavefunction | `.mwfn`, `.fchk`, `.fch`, `.molden`, `.wfn`, `.wfx` | Calculate supported real molecular orbitals locally; also open supported remote text files |
+| Additional remote wavefunction | `.gms`, `.chk`, `.gbw` | Requires server Multiwfn; CHK and GBW also need their converters |
 | Text | `.txt`, `.text`, `.md`, `.csv`, `.tsv` | Read and edit text |
 | Images | PNG, JPEG, HEIC / HEIF, GIF, BMP and TIFF | Preview, zoom and pan |
 
@@ -92,7 +93,7 @@ XYZ files, including multi-frame trajectories, accept element symbols, atomic nu
 
 ### 2.2. Navigate and organise
 
-Tap a folder to enter it. The **../** row at the top returns to the parent folder. The path field lets you jump to a directory; the filter narrows the current file list. Use **Refresh** after a remote calculation creates new output.
+Tap a folder to enter it. The **../** row at the top returns to the parent folder. The path field lets you jump to a directory; **Filter files** narrows files while keeping folders visible for navigation. Hidden entries still follow Show Hidden Files. Opening or closing a file refreshes the current directory automatically; use **Refresh** to check for new remote calculation output at any time.
 
 Long-press a file, or right-click with a pointer, to open its menu:
 
@@ -126,9 +127,9 @@ Choose **New Text File**, or use **Open as Text** on an existing file. Edit the 
 
 Whole-folder transfers preserve the directory structure. Uploads and downloads show progress. Cancelling an outward drag does not start an export download. Dragging a file onto a folder within Magpie moves that file; dropping it on a non-target workspace area cancels the drag.
 
-After an incoming drop, Magpie opens the last supported top-level file; folders are imported without opening. DCD files remain available for attachment to a reference XYZ. Wavefunction files are imported without opening in Local or when remote Multiwfn is unavailable; an available server Multiwfn environment enables the usual opening workflow.
+After an incoming drop, Magpie opens the last supported top-level file; folders are imported without opening. DCD files remain available for attachment to a reference XYZ. With GPU-Accelerated Orbitals enabled, supported text wavefunctions can open in Local or Remote without Multiwfn. Other remote wavefunction formats require Multiwfn; local CHK and GBW cannot be parsed.
 
-The transfer limit is 512 MiB per item, counting the complete contents of a folder. Symbolic links are not followed. For GOAT and other results with companion files, transferring their containing folder helps preserve matching names.
+Individual `.cub` / `.cube` files support up to **2 GiB**. Other transferred files and complete folder trees retain the **512 MiB** limit; a CUBE inside a folder does not raise the folder's total allowance. Symbolic links are not followed. For GOAT and other results with companion files, transferring their containing folder helps preserve matching names.
 
 ### 2.6. Copy and paste
 
@@ -169,7 +170,7 @@ Install Multiwfn on the server and make it available in its shell environment. F
 | `.chk` | `formchk` |
 | ORCA `.gbw` | `orca_2mkl` |
 
-The other wavefunction formats listed above are passed directly to Multiwfn. Put the source files in a writable calculation directory: Magpie creates temporary analysis files beside them.
+Supported text wavefunctions can use the local GPU without Multiwfn. Other remote formats and Quick ESP use Multiwfn. Put remote analysis sources in a writable calculation directory. XYZ extraction and MWFN conversion run from that source directory and write exports into separate temporary directories. Configure converter paths in the Multiwfn settings; absolute helper paths are useful when analyses run in temporary directories.
 
 ### 3.3. Multiwfn Prewarm Command
 
@@ -215,9 +216,9 @@ For long calculations, use the server's normal job scheduler or session-manageme
 
 Outside editing and measurement modes, tap an atom to make it the centre of subsequent view rotation. The atom is highlighted. Tap another atom to change the centre, or use **Reset view** to return to the overall structure centre and reset the view.
 
-The glasses button enables a red–blue anaglyph for matching 3D glasses. Adjust the red and blue intensity sliders to balance the two images.
+The glasses button enables a red–blue anaglyph for matching 3D glasses. Adjust the red and blue intensity sliders to balance the two images. Surface overlays are not displayed in red–blue mode.
 
-Use the header's sidebar and Results buttons to make room for the structure. On iPad, drag panel dividers to adjust the workspace. The iPhone molecular workspace uses landscape orientation; Terminal and Multiwfn use portrait orientation.
+On iPhone, switch the left sidebar between files and Results using its toolbar control, and drag the divider to resize it. Opening a molecule selects Results; opening text or an image selects files. Hide the sidebar from its toolbar and restore it with **Show Sidebar** in the document header. On iPad, use the header's Results button for the bottom drawer and drag panel dividers to adjust the workspace. The iPhone molecular workspace uses landscape orientation; Terminal and Multiwfn use portrait orientation.
 
 ### 4.2. Measurements
 
@@ -227,7 +228,7 @@ Enable the ruler, then tap atoms in order:
 - Three atoms, A–B–C: angle at B.
 - Four atoms, A–B–C–D: dihedral angle about B–C.
 
-Tap a selected atom to remove it from the measurement. Double-tap empty space to clear the selection. Measurements leave the coordinates unchanged.
+Tap a selected atom to remove it from the measurement. Double-tap empty space to clear the selection. Measurements leave the coordinates unchanged. When scrubbing a trajectory with the same atom count and element order, selected atoms remain selected and the values update for the current frame.
 
 ### 4.3. Bonds
 
@@ -239,7 +240,7 @@ In **Settings → Molecule Viewer**, **Show Hydrogen Bonds** is on by default. I
 
 ### 4.4. Element appearance and workspace behaviour
 
-All 118 elements have assigned colours and display radii. The colours aid identification; they are not a measurement of emitted light. Display sizes broadly follow reference covalent radii, with a compact hydrogen display. These visual sizes do not change coordinates, inferred bonds or force-field parameters.
+All 118 elements have assigned colours and display radii. The colours aid identification; they are not a measurement of emitted light. Display sizes broadly follow reference covalent radii, with a compact hydrogen display. These visual sizes do not change coordinates, inferred bonds or force-field parameters. Large structures use automatic rendering optimisations. When zooming deeply into a large structure, nearby atoms and bonds fade to reveal the interior; this does not remove atoms from the document.
 
 The interface retains its dark appearance regardless of the system theme. On iPad, use the sidebar divider to resize the file browser, including while GOAT charts are open. Auto-rotation, trajectory playback and vibrations continue while scrolling the file list or result panels; presentations and leaving the app can still pause the scene.
 
@@ -256,7 +257,18 @@ Tap **Export 3D model**, the square-and-up-arrow button on the molecular canvas,
 
 For a trajectory, open a multi-frame document and choose **USDZ → Animation**. To export a vibration, select a mode in Results and start **Play Vibration** first. To export a rotating model, turn on auto-rotation first. While rotation or vibration is active, the USDZ menu offers animation export; stop them to export a static USDZ. An active vibration takes priority over the loaded trajectory.
 
-Choose a file name and destination in the system save dialog. Exports retain molecular and surface colours and transparency. Displayed surfaces stay fixed relative to the molecule during trajectory and vibration animations and rotate with the whole model. Dynamic Bonds and Show Hydrogen Bonds also apply to animations. Lighting and material appearance depend on the app used to view the exported model.
+After preparation, choose **Save to Files**, AirDrop or a compatible app in the system share interface. On iPad, sharing opens in a compact popover anchored to the export button; on iPhone, it opens in a system sheet. Exports retain molecular and surface colours and transparency. Displayed surfaces stay fixed relative to the molecule during trajectory and vibration animations and rotate with the whole model. Dynamic Bonds and Show Hydrogen Bonds also apply to animations. Lighting and material appearance depend on the app used to view the exported model. GLB and USDZ do not include the screen-space Constant outlines; use PNG when you want an image of that appearance.
+
+### 4.6. Export a PNG image
+
+1. Set the view, material, surface opacity and desired frame.
+2. Stop auto-rotation, trajectory playback and vibration playback; **Export image** is unavailable while any of these is running.
+3. Tap **Export image**, the photo-and-down-arrow button beside or below Export 3D model.
+4. After preparation, use **Save Image**, **Save to Files**, AirDrop or a compatible app in the system share interface.
+
+The PNG keeps the canvas aspect ratio, has a **6000-pixel longest edge**, and includes **1000 dpi** metadata and a Display P3 colour profile. It renders the current scene at output resolution, including displayed surfaces and Constant outlines. Controls, measurement text, selection marks and Pencil previews are omitted.
+
+Ordinary PNGs have a transparent background. Red–blue PNGs have an opaque black background and retain the current stereo intensities; surface overlays are absent in this mode. Version 1.13 improves surface occlusion, transparency, lighting and outline consistency with the canvas. For the closest appearance, composite a transparent PNG over the same background colour as the canvas; other backgrounds and colour-compositing behaviour can change its appearance.
 
 ## 5. Building and editing molecules
 
@@ -557,6 +569,8 @@ For an optimisation, use the trajectory controls to inspect individual steps. Th
 
 Choose **Vibrations**, select a mode from the frequency menu, then tap **Play Vibration**. The arrows move between neighbouring modes. **Displacement Amplitude** changes the size of the displayed motion. Frequencies are shown in cm⁻¹; negative frequencies identify imaginary modes in the output.
 
+For ORCA QM/MM outputs, motion is mapped to the displayed real QM atoms and link atoms remain stationary. Modes with negligible real-QM motion appear disabled under **Unavailable Modes**; playback and navigation use **Available Modes**. If none are available, **No QM Motion** appears and playback is disabled.
+
 ### 8.3. IRC and one-dimensional scans
 
 Choose **IRC** or **Scan** in Results to view the energy profile and its linked trajectory. Tap a point on the curve to display that geometry. Relative energies are shown in kcal/mol.
@@ -586,7 +600,7 @@ For a TDDFT or other supported excited-state output, **UV-Vis** displays the abs
 
 Place the GOAT `.out` and its matching `.finalensemble.xyz` in the same Local or Remote directory, then open the `.out`. For example, keep `sample.out` with `sample.finalensemble.xyz`. The output supplies the final conformer table; the ensemble supplies the geometries. Initial optimisation trajectories and intermediate search ensembles are not substitutes for the final ensemble.
 
-In **Conformation**, use the conformer menu, arrows or slider, or select a bar in either chart. The 3D structure and both chart selections change together. ORCA conformer numbering starts at **0**, independently of Magpie's atom numbering.
+In **Conformation**, use the conformer menu or slider, or select a bar in either chart. The 3D structure and both chart selections change together. ORCA conformer numbering starts at **0**, independently of Magpie's atom numbering.
 
 - **Population** shows percentages and **Relative energy** uses kcal/mol.
 - On iPad, population is on the left and energy on the right; on iPhone, population appears above energy.
@@ -598,7 +612,7 @@ If the final table and ensemble are missing, damaged or inconsistent, Magpie dis
 
 ### 8.7. Spin–orbit coupling (SOC)
 
-Open an ORCA output containing SOC results. In **UV-Vis**, the original and SOC-corrected spectra appear one above the other when both are available. Drag horizontally to pan or pinch horizontally to zoom the wavelength range; the plots remain aligned. Trackpad zoom is also supported. **Reset** restores the initial range, and vertical scrolling moves through the Results drawer.
+Open an ORCA output containing SOC results. In **UV-Vis**, the original and SOC-corrected spectra appear one above the other when both are available. Drag horizontally to pan or pinch horizontally to zoom the wavelength range; the plots remain aligned. Trackpad zoom is also supported. **Reset** restores the initial range, and vertical scrolling moves through the Results panel.
 
 Choose **SOC** to see the coupling table, sorted by strength in cm⁻¹, and the linked singlet–triplet energy diagram. Select a table row to highlight its two states and their connection. The diagram includes S0 and displays energies in eV. **Transitions** provides the orbital contributions for the reported excited states. The available tabs and plots follow the data present in the output.
 
@@ -607,6 +621,8 @@ Choose **SOC** to see the coupling table, sorted by strength in cm⁻¹, and the
 ### 9.1. Multi-frame XYZ
 
 Open the XYZ file and select **Trajectory**. Tap Play, drag the Frame slider to inspect a particular structure, and adjust **Speed** in frames per second. Enable **Settings → Molecule Viewer → Loop Trajectory Playback** to repeat the sequence.
+
+Loading prepares the trajectory's bonds before displaying the document, so large trajectories may take longer to open. Playback uses the original frames without interpolation.
 
 The document opens at its final frame. The initial playback speed is set from the number of frames; use Speed to change it. See [Bonds](#43-bonds) to choose fixed or dynamic bonding.
 
@@ -655,7 +671,7 @@ For ESP, open the density CUBE first and the potential CUBE second. For Interact
 
 Lower the render quality while adjusting a large surface, then raise it for closer inspection.
 
-**Settings → Molecule Viewer → GPU Cube Acceleration (Beta)** is on by default and accelerates CUBE surface generation, including Molecular Orbitals and Quick ESP surfaces. Turn it off to generate surfaces on the CPU. After closing Settings, the current surface rebuilds with your view and display settings retained.
+CUBE surface generation now uses the GPU for Molecular Orbital, WFN Analysis, Interaction and ESP. The former GPU Cube Acceleration switch has been removed. **GPU-Accelerated Orbitals (Beta)** in Analysis controls wavefunction-to-orbital calculation, a separate operation from extracting a surface from an existing CUBE.
 
 Use [Export 3D model](#45-export-3d-models-and-animations) to save the displayed molecule and surface as GLB or USDZ.
 
@@ -673,27 +689,52 @@ For remote CUBE files, choose **Save** for a single field or **Save Both** for a
 
 ## 11. Molecular orbitals and Quick ESP
 
-These tools work from a remote wavefunction file using the server's prepared Multiwfn environment.
+Molecular orbitals can be calculated on the device GPU from supported text wavefunctions, or through a remote Multiwfn installation. Quick ESP requires remote Multiwfn.
 
 ### 11.1. Molecular orbitals
 
-1. Connect to the server and open a wavefunction file.
-2. Tap the **Molecular Orbitals** button in the workspace header.
-3. Browse the orbital list, which shows energy, occupation and HOMO / LUMO labels. Unrestricted wavefunctions have separate α and β columns.
-4. Tap an orbital to generate and display its surface.
-5. Adjust Iso Value, Render Quality and Surface Opacity in Results.
+1. In **Settings → Analysis**, leave **GPU-Accelerated Orbitals (Beta)** enabled for local calculation.
+2. Open **Local** and select the bundled **methanol.mwfn** example, or import a supported wavefunction. You can also open a wavefunction from an SSH directory.
+3. Tap **Molecular Orbitals** in the workspace header.
+4. Browse energies, occupations and HOMO / LUMO labels; unrestricted wavefunctions have separate α and β columns.
+5. Select an orbital to display its surface. The selection status identifies **Local GPU** or **Remote Multiwfn**.
+6. Adjust **Iso Value**, **Render Quality** and **Surface Opacity** in Results.
 
-Orbitals near the frontier region are prepared ahead of time. Double-tap a more distant orbital to also prepare the uncached orbitals between it and the nearby cached region of the same spin. Use **Settings → Analysis → Orbital Energy Unit** to switch between a.u. and eV.
+Local GPU supports common real molecular Gaussian-basis `.mwfn`, `.fchk` / `.fch`, `.molden`, `.wfn` and `.wfx` files, including supported Cartesian and pure s–g functions. Complex/spinor, periodic and higher-angular-momentum inputs are not supported locally. WFN/WFX files may omit virtual orbitals; only the actual orbital list is shown.
+
+The initial preparation prioritises HOMO−3 through LUMO, then completes HOMO−5 through LUMO+2 where these orbitals exist. Double-tap a more distant orbital to prepare uncached orbitals between it and the nearby cached region of the same spin. Ordinary selection and range preparation retain your current isovalue and opacity. Use **Orbital Energy Unit** in Settings to choose a.u. or eV.
 
 ### 11.2. Quick ESP
 
-1. Open a remote wavefunction file.
-2. Tap the **Quick ESP** button beside Molecular Orbitals.
-3. Multiwfn generates the density and potential fields, and Magpie displays the coloured surface with an automatically fitted initial range.
-4. Adjust the surface or enter a shared colour range for comparisons.
-5. Choose **Save Both** to keep the two CUBE files in Local, or **Skip** to continue without saving them.
+1. Open a remote wavefunction with Multiwfn available.
+2. Tap **Quick ESP** beside Molecular Orbitals.
+3. Multiwfn generates electron-density and electrostatic-potential CUBEs. Magpie displays the coloured surface and fits the initial colour range.
+4. Adjust the isovalue or enter a common colour range for comparisons.
+5. Choose **Save Both** to keep both CUBEs in a Local folder, or **Skip** to continue viewing without saving.
 
-The orbital and Quick ESP calculations use temporary analysis files. Saving the CUBE results to Local lets you reopen those surfaces without a server connection.
+Quick ESP remains available with remote Multiwfn even if molecular-orbital evaluation uses Local GPU. It is unavailable in Local or on remote connections without Multiwfn. Reopen saved density and potential CUBEs through the ESP pairing workflow to inspect the result offline.
+
+### 11.3. Local GPU settings and remote routing
+
+| Setting | Meaning |
+| --- | --- |
+| **GPU-Accelerated Orbitals (Beta)** | On by default. Enable local orbital calculation; turn off to use the existing remote Multiwfn workflow where available. Local wavefunctions require it to be enabled. |
+| **WFN File Size threshold (MB)** | Default **10 MB**, using decimal MB. With remote Multiwfn available, a supported text input strictly smaller than the threshold can be downloaded for local calculation. Changing this value affects subsequent opens. |
+| **Grid Points per Axis** | Default **120**, accepted **16–360**. Its cube is a nominal total-point budget; actual X/Y/Z counts adapt to molecular shape with equal spacing and can slightly exceed that budget after endpoint rounding. |
+
+Local inputs and supported remote text inputs without Multiwfn bypass the size threshold. Remote CHK/GBW always require Multiwfn and their configured converters. With Multiwfn available, larger or binary inputs first display extracted geometry, then may be converted to MWFN. Magpie uses local calculation if the converted file is below the threshold and compatible; otherwise it retains Remote Multiwfn. An already-large MWFN is not repeatedly converted. A valid current local snapshot can be reused.
+
+Increase the grid setting for finer orbital sampling, at the cost of computation, memory, storage and CUBE export size. **Render Quality** controls surface extraction from the sampled grid and is a separate setting. The local grid surrounds molecular and basis centres with 6 Bohr of padding per face; very diffuse or Rydberg orbitals can extend beyond this region. Increasing the point setting refines spacing without enlarging that padding.
+
+When you change the grid with the orbital sidebar open, Magpie recalculates the selected orbital first, then prepares the frontier window. The existing surface remains until its replacement is ready; selection, isovalue, opacity and Render Quality are retained. The Iso Value slider is temporarily unavailable while local MO computation is active and becomes available again afterwards.
+
+Computed grids use a bounded RAM cache and temporary disk storage. Local orbital and remote analysis caches each have a 3 GB disk allowance; old entries can be evicted and recomputed. These allowances are not a total app-memory limit or permanent storage. Share results you want to retain.
+
+### 11.4. Share an orbital CUBE
+
+Select an orbital, then use its **CUBE sharing button in the Molecular Orbitals sidebar**. In the system share interface, choose Save to Files, AirDrop or a compatible app. The exported name follows `<wavefunction name>_<native orbital index>.cub`; spin channels retain distinct source indices.
+
+Local GPU results are written as standard CUBE data, while remote results reuse the generated CUBE. There is no separate Save to Local button for molecular orbitals. To keep an exported orbital in Magpie, save it through the system interface and import the CUBE into Local. A saved CUBE can be reopened without the original wavefunction or a server connection.
 
 ## 12. Terminal and interactive Multiwfn
 
@@ -713,7 +754,7 @@ Select a remote analysis file and open **Multiwfn** from the header. The panel c
 
 Tap a numbered option or enter the response directly in the terminal. Continue through Multiwfn's menus as you would in an SSH session. The restart button starts the analysis again for the selected file. Use the program's exit command or close the panel to end the analysis; the prepared environment remains available until you disconnect.
 
-Molecular Orbitals, Quick ESP and interactive Multiwfn share the Multiwfn environment. Finish or close the current analysis before starting another of these tools. The ordinary Terminal is a separate session.
+Remote Multiwfn orbital calculations, Quick ESP and interactive Multiwfn share the Multiwfn environment. Finish or close the current analysis before starting another of these tools. The ordinary Terminal is a separate session.
 
 ## 13. Settings
 
@@ -726,14 +767,16 @@ Molecular Orbitals, Quick ESP and interactive Multiwfn share the Multiwfn enviro
 | Molecule Viewer | Dynamic Bonds | Update connections and bond orders during trajectory and vibration playback; off by default |
 | Molecule Viewer | Atom & Bond Material | Choose Constant, Lambert, Satin, Glossy or Toon for atoms and bonds; default Lambert |
 | Molecule Viewer | Surface Material | Choose the surface material independently from the same five options; default Lambert |
-| Molecule Viewer | GPU Cube Acceleration (Beta) | Use GPU surface generation; on by default |
 | Molecule Viewer | Loop Trajectory Playback | Repeat trajectories |
 | Geometry Editor | Force Field | Choose UFF or MMFF94s |
 | Geometry Editor | Freeze Selected Atoms | Hold the selected atoms fixed in the next optimisation |
 | File Browser | Show Hidden Files | Show dot-prefixed files and folders |
+| Analysis | GPU-Accelerated Orbitals (Beta) | Calculate supported molecular orbitals on the device GPU; on by default |
+| Analysis | WFN File Size threshold (MB) | Remote backend selection threshold; default 10 MB; see section 11.3 |
+| Analysis | Grid Points per Axis | Local orbital grid setting; default 120, accepted 16–360; actual axes adapt to molecular shape |
 | Analysis | Orbital Energy Unit | Choose a.u. or eV |
 
-Constant gives flat shading, Lambert diffuse lighting, Satin soft highlights, Glossy stronger highlights, and Toon stepped light and shade. Atom & Bond Material and Surface Material are saved independently. Existing saved preferences are retained when updating the app.
+Constant gives flat shading with visible contour outlines, Lambert diffuse lighting, Satin soft highlights, Glossy stronger highlights, and Toon stepped light and shade. Atom & Bond Material and Surface Material are saved independently. Existing saved preferences are retained when updating the app.
 
 About shows the app version. Credits and Open Source Software list the scientific software, libraries and their notices, including Jmol as a reference for some element colours.
 
@@ -741,7 +784,7 @@ About shows the app version. Credits and Open Source Software list the scientifi
 
 ### 14.1. Where did my generated file go?
 
-Generate saves into the current browser directory. Look in Local if you were working locally, or refresh the remote directory if you were connected to a server. CUBE Save / Save Both uses the Local folder chosen in its destination picker.
+Generate saves into the current browser directory. Look in Local if you were working locally, or refresh the remote directory if you were connected to a server. CUBE Save / Save Both uses the Local folder chosen in its destination picker. Orbital CUBE sharing and PNG/3D exports use the destination chosen in the system share interface.
 
 ### 14.2. How do I keep an edited structure?
 
@@ -757,7 +800,7 @@ Open the main calculation output containing those results. A coordinate file con
 
 ### 14.5. Why will a wavefunction not open?
 
-Open it from Remote, with Multiwfn available in the prepared environment. In the Multiwfn settings, check the configured path to `formchk` for `.chk`, or `orca_2mkl` for `.gbw`. Also check that the source directory is writable. If a cluster allocation has ended, reconnect to prepare a fresh environment.
+For Local, enable **GPU-Accelerated Orbitals (Beta)** and use a supported `.mwfn`, `.fchk` / `.fch`, `.molden`, `.wfn` or `.wfx` file. Local CHK and GBW are binary and cannot be parsed. Remote CHK/GBW and other unsupported inputs require Multiwfn; check `formchk` or `orca_2mkl`, a writable source directory and the prepared environment. Reconnect if a cluster allocation has ended. Unsupported local basis or wavefunction semantics require conversion or a supported remote workflow.
 
 ### 14.6. What should I change when force-field optimisation reports an error?
 
@@ -769,7 +812,7 @@ For an empty surface, lower Iso Value. For a paired surface, check the order of 
 
 ### 14.8. A file is too large to import
 
-The import limit is 512 MiB per file or transferred folder tree. Symbolic links are not supported for folder transfers. CUBE files support up to 20 million grid points and one scalar dataset per file. Regenerate a coarser CUBE or export a shorter trajectory for on-device inspection.
+Individual `.cub` / `.cube` files support up to **2 GiB**; other imports and complete folder trees retain **512 MiB**. Folder transfers do not follow symbolic links. CUBE files support up to **64,000,000 grid points** and one scalar dataset per file. Available device memory can still limit large surfaces. Lower the local orbital grid setting, regenerate a coarser CUBE, or export a shorter trajectory when needed.
 
 ### 14.9. Report an issue
 
@@ -782,4 +825,13 @@ Background execution is temporary and system-controlled. Return to Magpie and le
 ### 14.11. Why will GOAT results not open?
 
 Open the final GOAT output and keep the matching `.finalensemble.xyz` beside it. Check that the conformer count, element order and energies belong to the same calculation. Do not substitute an optimisation trajectory or an intermediate ensemble. See [section 8.6](#86-goat-conformer-ensembles).
+
+### 14.12. Why is Export image unavailable?
+
+Stop auto-rotation, trajectory playback and vibration playback. Wait for any current export or share presentation to finish, then use Export image.
+
+### 14.13. Why is Quick ESP missing, or a LUMO not listed?
+
+Quick ESP requires remote Multiwfn even when molecular orbitals use the local GPU. WFN/WFX files may contain occupied orbitals only; Magpie shows the orbitals actually present and does not invent missing virtual orbitals or a LUMO.
+
 
